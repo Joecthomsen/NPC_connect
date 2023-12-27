@@ -1,10 +1,18 @@
 import * as Crypto from 'expo-crypto';
-import { Buffer } from 'buffer';
+//import { Buffer } from 'buffer';
 import bigInt from 'big-integer';
-
+//global.Buffer = require('buffer').Buffer;
 
 const SHA512 = Crypto.CryptoDigestAlgorithm.SHA512;
 
+const NG_1024 = 0
+const NG_2048 = 1
+const NG_3072 = 2
+const NG_4096 = 3
+const NG_8192 = 4
+
+
+/* 
 function bytesToNumber(bytes) {
   return parseInt(Buffer.from(bytes, 'base64').toString('hex'), 16);
 }
@@ -14,21 +22,26 @@ function numberToBytes(number) {
   const paddedHexString = hexString.length % 2 === 0 ? hexString : '0' + hexString;
   return Buffer.from(paddedHexString, 'hex').toString('base64');
 }
-
+ */
 class SRP6aClient {
-  constructor(username, password, hashAlg = SHA512, ngType = NG_3072) {
-    const hashClass = _hashMap[hashAlg];
+  constructor(username, password) {
 
-    const [N, g] = getNg(ngType);
-    const k = H(hashClass, N, g, { width: longToBytes(N).length });
+    const g = 2;
 
+    const N_hex = 'EEAF0AB9ADB38DD69C33F80AFA8FC5E86072618775FF3C0B9EA2314C9C256576D674DF7496EA81D3383B4813D692C6E0E0D5D8E250B98BE48E495C1D6089DAD15DC7D7B46154D6B6CE8EF4AD69B15D4982559B297BCF1885C529F566660E57EC68EDBC3C05726CC02FD4CBF4976EAA9AFD5138FE8376435B9FC61D2FC0EB06E3'
+    
+    const N = bigInt(N_hex, 16)//ngConst[2][2];
     this.Iu = username;
     this.p = password;
 
-    this.a = getRandomOfLength(32);
-    this.A = g ** this.a % N;
+    this.a = this.getRandomOfLength(256);
+    console.log("N: " + N);
+    console.log("g: " + g);
+    this.A = bigInt(g).modPow(this.a, N);
+    console.log("this.A: " + this.A);
 
-    this.v = null;
+
+/*     this.v = null;
     this.K = null;
     this.H_AMK = null;
     this.authenticated = false;
@@ -36,22 +49,30 @@ class SRP6aClient {
     this.hashClass = hashClass;
     this.N = N;
     this.g = g;
-    this.k = k;
+    this.k = k; */
   }
 
-  getRandomOfLength(length) {
-    const min = bigInt(2).pow(length); // 2^255
-    const max = bigInt(2).pow(length - 1).minus(1); // 2^256 - 1
+    getRandomOfLength(length) {
+        const min = bigInt(2).pow(length); // 2^255
+        const max = bigInt(2).pow(length).minus(1); // 2^256 - 1
 
-    return bigInt.randBetween(min, max);
-  }
+        return bigInt.randBetween(min, max);
+    }
 
+    getNg(ngConst) {
+        return [ngConst[2], ngConst[2]];
+    }
+
+    getPublicKey(){
+        return this.A;
+    }
+/* 
   longToBytes(longValue) {
     const hexString = longValue.toString(16);
     const paddedHexString = hexString.length % 2 === 0 ? hexString : '0' + hexString;
     return Buffer.from(paddedHexString, 'hex');
-  }
-
+  } */
+/* 
   authenticated() {
     return this.authenticated;
   }
@@ -139,6 +160,7 @@ class SRP6aClient {
     h.update(Buffer.from(K, 'hex'));
     return h.digest('hex');
   }
+  */
 }
-
+ 
 export default SRP6aClient;
