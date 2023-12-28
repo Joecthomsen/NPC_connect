@@ -8,17 +8,17 @@ import bigInt from 'big-integer';
 import { SRPClient } from 'srp6a'; */
 import SRP6aClient from './SRP6a';  // Update the path based on your project structure
 
-
 import { SessionData, SecSchemeVersion, Sec2Payload, S2SessionCmd0, S2SessionCmd1, Sec2MsgType } from "./my_proto_pb";
 //import { SRPClient } from 'srp6a';
 
-function numberToByteArray(number) {
-  const buffer = new ArrayBuffer(8); // Assuming 8 bytes for a double-precision floating-point number
-  const view = new DataView(buffer);
-  view.setFloat64(0, number); // Assuming a double-precision floating-point number
+function bigIntToByteArray(bigIntValue, byteLength) {
+  const byteArray = new Uint8Array(byteLength);
+  let current = bigIntValue;
 
-  // Convert the buffer to a Uint8Array
-  const byteArray = new Uint8Array(buffer);
+  for (let i = byteLength - 1; i >= 0; i--) {
+    byteArray[i] = current.and(0xFF).toJSNumber();
+    current = current.shiftRight(8);
+  }
 
   return byteArray;
 }
@@ -103,6 +103,7 @@ const sessionCmd1 = async (clientProof) => {
     sessionData.setSec2(sec2Payload1);
 
     const body = sessionData.serializeBinary();
+    console.log("BODY LENGHT: " + body.length);
     
     const contentLength = new Uint8Array(body).length.toString();
     
@@ -142,6 +143,8 @@ const sessionCmd1 = async (clientProof) => {
 
 export default function App() {
 
+  
+
   const clientUserName = "joecthomsen"
   const clientPassword = "password123"
 
@@ -153,27 +156,29 @@ export default function App() {
   console.log("SRP6a client instance created");
   //const srpClient = new SRPClient('default', crypto.randomBytes);
   const handleClick = async () => {
-
+    //CMD_0
     console.log("Getting public key")
     const publicKey = srp.getPublicKey();
     console.log("Public key: " + publicKey);
     setCounter(prevCounter => prevCounter + 1);
     //await connectToEsp32AP()
-    const bytePubkey = numberToByteArray(publicKey);
-    const sessionResponse0 = await sessionCmd0(bytePubkey, clientUserName);
+    const publicKeyBigInt = bigInt(srp.getPublicKey());
+    const publicKeyBytes = bigIntToByteArray(publicKeyBigInt, 384);
+    console.log("public key lenght: " + publicKeyBytes.length);
+    const sessionResponse0 = await sessionCmd0(publicKeyBytes, clientUserName);
     console.log(sessionResponse0.toObject());
-/* 
-    const devicePublicKey = sessionResponse0.getSr0().getDevicePubkey_asU8();
-    const sharedSecret = srp.getSharedSecret(devicePublicKey);
-    const clientProof = await srp.clientProof(devicePublicKey, sharedSecret);
-    console.log("Client Proof: " + clientProof); */
 
-    // Check if the client proof length is 64
-/*     const clientProofLength = clientProof.length;
-    console.log("Client Proof Length: " + clientProofLength);
-    
-    const sessionResponse1 = await sessionCmd1(clientProof);
-    console.log(sessionResponse1.toObject()); */
+    //CMD_1
+    const devicePublicKey = sessionResponse0.getSr0().getDevicePubkey_asB64();
+    console.log("Device Public Key: " + devicePublicKey);
+    const deviceSalt = sessionResponse0.getSr0().getDeviceSalt_asB64();
+    console.log("Device Salt: " + deviceSalt);
+    await srp.setSharedKey(deviceSalt, devicePublicKey);
+    const proof = await srp.calculateProof(deviceSalt, devicePublicKey)
+    console.log("Client Proof: " + proof)
+
+    const sessionResponse1 = await sessionCmd1(proof);
+    console.log(sessionResponse1.toObject());
 
   }
 
