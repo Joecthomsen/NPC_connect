@@ -7,7 +7,7 @@ import {toByteArray} from 'base64-js'
 import { btoa, atob } from 'react-native-quick-base64';
 import { decode } from 'base-64';
 
-const SHA1 = Crypto.CryptoDigestAlgorithm.SHA1;
+const SHA256 = Crypto.CryptoDigestAlgorithm.SHA256;
 
 const NG_1024 = 0
 const NG_2048 = 1
@@ -18,20 +18,20 @@ const NG_8192 = 4
 class SRP6aClient {
   constructor(username, password) {
 
-    this.g = "2";
+    this.g = 2;
 
     const N_hex = 'EEAF0AB9ADB38DD69C33F80AFA8FC5E86072618775FF3C0B9EA2314C9C256576D674DF7496EA81D3383B4813D692C6E0E0D5D8E250B98BE48E495C1D6089DAD15DC7D7B46154D6B6CE8EF4AD69B15D4982559B297BCF1885C529F566660E57EC68EDBC3C05726CC02FD4CBF4976EAA9AFD5138FE8376435B9FC61D2FC0EB06E3'
-    
-    const N = bigInt(N_hex, 16)//ngConst[2][2];
-    this.N = N.toString();
+    this.N = bigInt(N_hex, 16)
+/*     const N = bigInt(N_hex, 16)//ngConst[2][2];
+    this.N = N.toString(); */
     this.Iu = username.toString();
     this.p = password.toString();
 
-    const N_concat_g = new TextEncoder().encode(N + this.g.toString());
+    const N_concat_g = new TextEncoder().encode(this.N + this.g.toString());
     const N_concat_g_str = N_concat_g.toString(); 
 
     //create k with SHA512
-    Crypto.digestStringAsync('SHA-512', N_concat_g_str).then(hash => {
+    Crypto.digestStringAsync(SHA256, N_concat_g_str).then(hash => {
       this.k = parseInt(hash, 16); // Assign the calculated hash to the variable 'k'
       console.log("This.k: " + this.k); // The calculated hash
     }).catch(error => {
@@ -47,9 +47,9 @@ class SRP6aClient {
     this.devicePublickey
 
     this.a = this.getRandomOfLength(256);
-    console.log("N: " + N);
+    console.log("N: " + this.N);
     console.log("g: " + this.g);
-    this.A = bigInt(this.g).modPow(this.a, N).toString();
+    this.A = bigInt(this.g).modPow(this.a, this.N).toString();
     console.log("this.A: " + this.A);
 
     this.sharedKey;
@@ -57,13 +57,16 @@ class SRP6aClient {
 
   async calculateProof(salt, devicePublickey){
 
-    const hash_N = parseInt(await Crypto.digestStringAsync(SHA1, this.N), 16).toString();
-    const hash_g = parseInt( await Crypto.digestStringAsync(SHA1, this.g), 16).toString();
-    const hash_I = parseInt( await Crypto.digestStringAsync(SHA1, this.Iu), 16).toString();
+    const N_string = this.N.toString()
+    const g_string = this.g.toString()
+
+    const hash_N = BigInt(parseInt( await Crypto.digestStringAsync(SHA256, N_string), 16)).toString();
+    const hash_g = BigInt(parseInt( await Crypto.digestStringAsync(SHA256, g_string), 16)).toString();
+    const hash_I = BigInt(parseInt( await Crypto.digestStringAsync(SHA256, this.Iu), 16)).toString();
     const hash_N_XOR_hash_g = (parseInt(hash_N, 16) ^ parseInt(hash_g, 16)).toString();
     const salt_string = this.salt.toString()
     const devicePublickey_string = this.devicePublickey.toString()
-    const sharedKey_string = this.sharedKey.toString();
+    const sharedKey_string = BigInt(this.sharedKey).toString();
     
     console.log("salt: " + salt_string);
     console.log("devicePublickey: " + devicePublickey_string);
@@ -76,10 +79,16 @@ class SRP6aClient {
     console.log("shared key: " + sharedKey_string)
    
     const concatString = hash_I + salt_string + this.A + devicePublickey_string + sharedKey_string
-
     console.log("concatString: " + concatString);
+    const clientProofForHashing = (hash_N_XOR_hash_g + concatString)
+    console.log("clientProofForHash: " + clientProofForHashing)
 
-    return parseInt(await Crypto.digestStringAsync(SHA1, hash_N_XOR_hash_g + concatString), 16);
+    const hashedValue = parseInt(await Crypto.digestStringAsync(SHA256, clientProofForHashing), 16);
+/*     console.log("Hashed value: " + hashedValue)
+    const clientProof = BigInt('0x' + hashedValue);
+    console.log("Client proof: " + clientProof); */
+    
+    return BigInt(hashedValue).toString();
   }
 
   async setSharedKey(salt, devicePublickey) {
@@ -102,7 +111,7 @@ class SRP6aClient {
     this.A = this.A.toString();
     console.log("this.A: " + this.A);
 
-    this.x = parseInt(await Crypto.digestStringAsync(SHA1, k_string + this.salt + this.p), 16).toString();
+    this.x = parseInt(await Crypto.digestStringAsync(SHA256, k_string + this.salt + this.p), 16).toString();
     console.log("this.x: " + this.x);
 
     this.v = bigInt(this.g).modPow(this.x, this.N).toString();
@@ -110,7 +119,7 @@ class SRP6aClient {
 
     const deviceKeyString = devicePublickey.toString();
     console.log("deviceKeyString: " + deviceKeyString)
-    this.u = parseInt(await Crypto.digestStringAsync(SHA1, this.A + deviceKeyString), 16)
+    this.u = parseInt(await Crypto.digestStringAsync(SHA256, this.A + deviceKeyString), 16)
     console.log("this.u: " + this.u)
     console.log("Varialbes init...")
 
@@ -141,7 +150,7 @@ class SRP6aClient {
     console.log("sharedKeyString: " + sharedKeyString);
 
     this.sharedKey = parseInt( await Crypto.digestStringAsync(
-      SHA1,
+      SHA256,
       sharedKeyString
     ), 16);
     console.log("Shared key calculated: " + this.sharedKey);

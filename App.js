@@ -101,7 +101,7 @@ const sessionCmd1 = async (clientProof) => {
 
     sessionData.setSecVer(SecSchemeVersion.SECSCHEME2);
     sessionData.setSec2(sec2Payload1);
-
+    console.log("Serializing cmd1")
     const body = sessionData.serializeBinary();
     console.log("BODY LENGHT: " + body.length);
     
@@ -156,6 +156,15 @@ export default function App() {
   console.log("SRP6a client instance created");
   //const srpClient = new SRPClient('default', crypto.randomBytes);
   const handleClick = async () => {
+
+    const SHA256 = Crypto.CryptoDigestAlgorithm.SHA256
+
+    const testHash = "12345abcdefgfgfgfgfgfgfgfgfgfgf"
+    const hash = await Crypto.digestStringAsync(SHA256, testHash)
+    console.log("hash test2: " + hash)
+    console.log("Hash length: " + hash.length)
+    console.log("Hash type: " + typeof hash)
+
     //CMD_0
     console.log("Getting public key")
     const publicKey = srp.getPublicKey();
@@ -176,7 +185,6 @@ export default function App() {
     await srp.setSharedKey(deviceSalt, devicePublicKey);
     const proof = await srp.calculateProof(deviceSalt, devicePublicKey)
     console.log("Client Proof: " + proof)
-
     const sessionResponse1 = await sessionCmd1(proof);
     console.log(sessionResponse1.toObject());
 
