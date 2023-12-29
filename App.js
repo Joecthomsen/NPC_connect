@@ -6,6 +6,8 @@ import * as Crypto from 'expo-crypto';
 import bigInt from 'big-integer';
 /* import { SRP } from 'srp6a';
 import { SRPClient } from 'srp6a'; */
+import { btoa, atob } from 'react-native-quick-base64';
+
 import SRP6aClient from './SRP6a';  // Update the path based on your project structure
 
 import { SessionData, SecSchemeVersion, Sec2Payload, S2SessionCmd0, S2SessionCmd1, Sec2MsgType } from "./my_proto_pb";
@@ -21,6 +23,22 @@ function bigIntToByteArray(bigIntValue, byteLength) {
   }
 
   return byteArray;
+}
+
+function hexToB64(hexString) {
+  const byteArray = [];
+
+  // Iterate through pairs of characters in the hex string
+  for (let i = 0; i < hexString.length; i += 2) {
+    // Extract a pair of characters
+    const hexPair = hexString.substr(i, 2);
+
+    // Convert the pair to a byte and push it to the array
+    byteArray.push(parseInt(hexPair, 16));
+  }
+  const b64 = btoa(String.fromCharCode.apply(null, byteArray));
+
+  return b64;
 }
 
 const sessionCmd0 = async (publicKey, clientUserName) => {
@@ -91,30 +109,43 @@ const sessionCmd1 = async (clientProof) => {
 
     const sessionData = new SessionData();
     const s2SessionCmd1 = new S2SessionCmd1();
-
     const sec2Payload1 = new Sec2Payload();
 
-    s2SessionCmd1.setClientProof(clientProof);
+    console.log("client proof lenght: " + clientProof.length)
+    const clientProofBase64 = hexToB64(clientProof)
+    console.log("clientProofBase64: " + clientProofBase64)
+    // Encode the binary data to Base64
+    //const clientProofBase64 = btoa(String.fromCharCode.apply(null, clientProofBinary));
+
+    //console.log("clientProofBase64: " + clientProofBase64);
+
+
+    s2SessionCmd1.setClientProof(clientProofBase64);
 
     sec2Payload1.setMsg(Sec2MsgType.S2SESSION_COMMAND1);
     sec2Payload1.setSc1(s2SessionCmd1);
 
     sessionData.setSecVer(SecSchemeVersion.SECSCHEME2);
     sessionData.setSec2(sec2Payload1);
-    console.log("Serializing cmd1")
+
+    console.log("Binary data: " + Array.from(new Uint8Array(body), byte => byte.toString(16).padStart(2, '0')).join(''));
+
+
     const body = sessionData.serializeBinary();
-    console.log("BODY LENGHT: " + body.length);
-    
-    const contentLength = new Uint8Array(body).length.toString();
-    
+    console.log("Binary data: " + body)
+    const contentLength = body.length//new Uint8Array(body).length.toString();
+
     console.log("content-length: " + contentLength);
+
+    const deserializedTest = proto.SessionData.deserializeBinary(new Uint8Array(body));
+    console.log(deserializedTest.toObject())
     console.log('Sending session command 1...');
 
     const response = await fetch('http://192.168.4.1/prov-session', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/protobuf',
-        'Content-Length': contentLength
+        'Content-Length': contentLength.toString()
       },
       body: body
     });
