@@ -6,107 +6,42 @@ import * as Crypto from 'expo-crypto';
 import bigInt from 'big-integer';
 /* import { SRP } from 'srp6a';
 import { SRPClient } from 'srp6a'; */
+import { btoa, atob } from 'react-native-quick-base64';
+
+import SRP6aClient from './SRP6a';  // Update the path based on your project structure
 
 import { SessionData, SecSchemeVersion, Sec2Payload, S2SessionCmd0, S2SessionCmd1, Sec2MsgType } from "./my_proto_pb";
+//import { SRPClient } from 'srp6a';
 
-class SRP6a {
-  constructor(username, password, hashAlg = 'sha256', ngType = 0) {
-    //const srp = new SRP('default', this.getRandom256BitNumber());
+function bigIntToByteArray(bigIntValue, byteLength) {
+  const byteArray = new Uint8Array(byteLength);
+  let current = bigIntValue;
 
-    this.username = username;
-    this.NgConst = [
-      [
-          'EEAF0AB9ADB38DD69C33F80AFA8FC5E86072618775FF3C0B9EA2314C9C256576D674DF7496EA81D3383B4813D692C6E0E0D5D8E250B98BE48E495C1D6089DAD15DC7D7B46154D6B6CE8EF4AD69B15D4982559B297BCF1885C529F566660E57EC68EDBC3C05726CC02FD4CBF4976EAA9AFD5138FE8376435B9FC61D2FC0EB06E3',
-          '2',
-      ],
-      // Add other NG constants as needed
-    ];
+  for (let i = byteLength - 1; i >= 0; i--) {
+    byteArray[i] = current.and(0xFF).toJSNumber();
+    current = current.shiftRight(8);
+  }
 
-    const [N, g] = this.NgConst[ngType];
-
-    // Store N and g as properties of the class
-    this.N = N;
-    this.g = g;
-
-    // Choose a random private key (256-bit)
-    this.a = this.getRandom256BitNumber();
-
-    // Calculate public key A
-    this.A = bigInt(g).modPow(this.a, bigInt(N, 16));
-
-    // Convert public key A to a 384-byte array
-    this.publicKeyBytes = this.convertTo384Bytes(this.A);
+  return byteArray;
 }
 
+function hexToB64(hexString) {
+  const byteArray = [];
 
-  getSharedSecret(serverPublicKey) {
-    const hexString = Array.from(serverPublicKey, byte => byte.toString(16).padStart(2, '0')).join('');      // Convert the byte array to a hexadecimal string
+  // Iterate through pairs of characters in the hex string
+  for (let i = 0; i < hexString.length; i += 2) {
+    // Extract a pair of characters
+    const hexPair = hexString.substr(i, 2);
 
-    const serverPublicKeyBigInt = bigInt(hexString, 16);// Convert the hexadecimal string to a BigInt
-    return serverPublicKeyBigInt.modPow(this.a, bigInt(this.N, 16));
+    // Convert the pair to a byte and push it to the array
+    byteArray.push(parseInt(hexPair, 16));
   }
+  const b64 = btoa(String.fromCharCode.apply(null, byteArray));
 
-  async clientProof(serverPublicKey, sharedSecret, salt) {
-    const verifier = this.srp.computeVerifier(this.username, this.password, salt);
-/*     const usernameHash = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      this.username
-    );
-
-    const concatenatedData = [
-      bigInt(this.N, 16).toString(16),         // The modulus
-      bigInt(this.g, 16).toString(16),         // The generator
-      bigInt(usernameHash, 16).toString(16),   // Username hash
-      serverPublicKey.toString(16),            // Server's public key
-      this.A.toString(16),                     // Client's public key
-      sharedSecret.toString(16)                // Shared secret
-    ].join('');
-  
-    const clientProof = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      concatenatedData,
-    );
-    return clientProof; */
-    return verifier
-  }
-  
-
-  getRandom256BitNumber() {
-    const min = bigInt(2).pow(255); // 2^255
-    const max = bigInt(2).pow(256).minus(1); // 2^256 - 1
-
-    return bigInt.randBetween(min, max);
-  }
-
-  convertTo384Bytes(bigIntValue) {
-    const hexString = bigIntValue.toString(16);
-    const paddedHexString = hexString.padStart(192, '0'); // 192 hex characters = 384 bytes
-    const byteArray = Array.from({ length: 384 }, (_, index) =>
-      parseInt(paddedHexString.substr(index * 2, 2), 16)
-    );
-
-    return Uint8Array.from(byteArray);
-  }
+  return b64;
 }
 
-const connectToEsp32AP = async () => {
-  try {
-      const wifiManager = new WifiManager();
-      console.log('Connecting to ESP32 AP...');
-      await wifiManager.connectToProtectedSSID('PROV_B54A4C', null, false).then(
-        () => {
-          console.log("Connected successfully!");
-        },
-        () => {
-          console.log("Connection failed!");
-        }
-      );
-  } catch (error) {
-      console.error('Error connecting to ESP32 AP:', error);
-  }
-};
-
-const sessionCmd0 = async (srpInstance, clientUserName, clientPassword) => {
+const sessionCmd0 = async (publicKey, clientUserName) => {
   try {
     const sessionData = new SessionData();    
     const s2SessionCmd0 = new S2SessionCmd0();  // Create a new instance of S2SessionCmd0   
@@ -114,7 +49,7 @@ const sessionCmd0 = async (srpInstance, clientUserName, clientPassword) => {
 
 /*     const srp = new SRP6a(clientUserName, clientPassword); // Create SRP6a instance */
 
-    const publicKey = srpInstance.publicKeyBytes;
+    //const publicKey = srpInstance.publicKeyBytes;
     //const publicKey = Crypto.getRandomBytes(384); // Generate a random 384-byte public key
 
     s2SessionCmd0.setClientUsername(clientUserName);
@@ -125,8 +60,10 @@ const sessionCmd0 = async (srpInstance, clientUserName, clientPassword) => {
     
     sessionData.setSecVer(SecSchemeVersion.SECSCHEME2); // Set the sec_ver field using the setter
     sessionData.setSec2(sec2Payload); // Set the proto field in SessionData with Sec2Payload
-
+    console.log("Serializing...")
     const body = sessionData.serializeBinary();
+    console.log("Done serializing");
+
     const contentLength = body.length.toString();
 
     console.log('Sending session command 0...');
@@ -172,10 +109,18 @@ const sessionCmd1 = async (clientProof) => {
 
     const sessionData = new SessionData();
     const s2SessionCmd1 = new S2SessionCmd1();
-
     const sec2Payload1 = new Sec2Payload();
 
-    s2SessionCmd1.setClientProof(clientProof);
+    console.log("client proof lenght: " + clientProof.length)
+    const clientProofBase64 = hexToB64(clientProof)
+    console.log("clientProofBase64: " + clientProofBase64)
+    // Encode the binary data to Base64
+    //const clientProofBase64 = btoa(String.fromCharCode.apply(null, clientProofBinary));
+
+    //console.log("clientProofBase64: " + clientProofBase64);
+
+
+    s2SessionCmd1.setClientProof(clientProofBase64);
 
     sec2Payload1.setMsg(Sec2MsgType.S2SESSION_COMMAND1);
     sec2Payload1.setSc1(s2SessionCmd1);
@@ -183,18 +128,24 @@ const sessionCmd1 = async (clientProof) => {
     sessionData.setSecVer(SecSchemeVersion.SECSCHEME2);
     sessionData.setSec2(sec2Payload1);
 
+    console.log("Binary data: " + Array.from(new Uint8Array(body), byte => byte.toString(16).padStart(2, '0')).join(''));
+
+
     const body = sessionData.serializeBinary();
-    
-    const contentLength = new Uint8Array(body).length.toString();
-    
+    console.log("Binary data: " + body)
+    const contentLength = body.length//new Uint8Array(body).length.toString();
+
     console.log("content-length: " + contentLength);
+
+    const deserializedTest = proto.SessionData.deserializeBinary(new Uint8Array(body));
+    console.log(deserializedTest.toObject())
     console.log('Sending session command 1...');
 
     const response = await fetch('http://192.168.4.1/prov-session', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/protobuf',
-        'Content-Length': contentLength
+        'Content-Length': contentLength.toString()
       },
       body: body
     });
@@ -223,30 +174,49 @@ const sessionCmd1 = async (clientProof) => {
 
 export default function App() {
 
+  
+
   const clientUserName = "joecthomsen"
   const clientPassword = "password123"
 
   const [counter, setCounter] = useState(0);
   const [response, setResponse] = useState("")
-  const srp = new SRP6a(clientUserName, clientPassword); // Create SRP6a instance
+  //const srp = new SRP6a(clientUserName, clientPassword); // Create SRP6a instance
+  console.log("Creating SRP6a instance...");
+  const srp = new SRP6aClient(clientUserName, clientPassword);
+  console.log("SRP6a client instance created");
   //const srpClient = new SRPClient('default', crypto.randomBytes);
   const handleClick = async () => {
-    //const setupReq = new protoSession.SessionData();
+
+    const SHA256 = Crypto.CryptoDigestAlgorithm.SHA256
+
+    const testHash = "12345abcdefgfgfgfgfgfgfgfgfgfgf"
+    const hash = await Crypto.digestStringAsync(SHA256, testHash)
+    console.log("hash test2: " + hash)
+    console.log("Hash length: " + hash.length)
+    console.log("Hash type: " + typeof hash)
+
+    //CMD_0
+    console.log("Getting public key")
+    const publicKey = srp.getPublicKey();
+    console.log("Public key: " + publicKey);
     setCounter(prevCounter => prevCounter + 1);
     //await connectToEsp32AP()
-    const sessionResponse0 = await sessionCmd0(srp, clientUserName, clientPassword);
+    const publicKeyBigInt = bigInt(srp.getPublicKey());
+    const publicKeyBytes = bigIntToByteArray(publicKeyBigInt, 384);
+    console.log("public key lenght: " + publicKeyBytes.length);
+    const sessionResponse0 = await sessionCmd0(publicKeyBytes, clientUserName);
     console.log(sessionResponse0.toObject());
 
-    const devicePublicKey = sessionResponse0.getSr0().getDevicePubkey_asU8();
-    const sharedSecret = srp.getSharedSecret(devicePublicKey);
-    const clientProof = await srp.clientProof(devicePublicKey, sharedSecret);
-    console.log("Client Proof: " + clientProof);
-
-    // Check if the client proof length is 64
-    const clientProofLength = clientProof.length;
-    console.log("Client Proof Length: " + clientProofLength);
-    
-    const sessionResponse1 = await sessionCmd1(clientProof);
+    //CMD_1
+    const devicePublicKey = sessionResponse0.getSr0().getDevicePubkey_asB64();
+    console.log("Device Public Key: " + devicePublicKey);
+    const deviceSalt = sessionResponse0.getSr0().getDeviceSalt_asB64();
+    console.log("Device Salt: " + deviceSalt);
+    await srp.setSharedKey(deviceSalt, devicePublicKey);
+    const proof = await srp.calculateProof(deviceSalt, devicePublicKey)
+    console.log("Client Proof: " + proof)
+    const sessionResponse1 = await sessionCmd1(proof);
     console.log(sessionResponse1.toObject());
 
   }

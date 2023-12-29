@@ -9,8 +9,10 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "base-64": "^1.0.0",
     "base64-js": "^1.5.1",
     "big-integer": "^1.6.52",
+    "buffer": "^6.0.3",
     "crypto": "^1.0.1",
     "expo": "~49.0.15",
     "expo-crypto": "~12.4.1",
@@ -21,9 +23,12 @@
     "react-native": "0.72.6",
     "react-native-crypto": "^2.2.0",
     "react-native-crypto-js": "^1.0.0",
+    "react-native-quick-base64": "^2.0.8",
     "react-native-randombytes": "^3.6.1",
     "react-native-wifi-reborn": "^4.10.1",
-    "srp6a": "^1.4.1"
+    "rn-fetch-blob": "^0.12.0",
+    "srp6a": "^1.4.1",
+    "text-encoding": "^0.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
