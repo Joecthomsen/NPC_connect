@@ -176,8 +176,8 @@ export default function App() {
 
   
 
-  const clientUserName = "joecthomsen"
-  const clientPassword = "password123"
+  const clientUserName = "wifiprov"
+  const clientPassword = "abcd1234"
 
   const [counter, setCounter] = useState(0);
   const [response, setResponse] = useState("")
