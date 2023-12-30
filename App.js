@@ -7,6 +7,7 @@ import bigInt from 'big-integer';
 /* import { SRP } from 'srp6a';
 import { SRPClient } from 'srp6a'; */
 import { btoa, atob } from 'react-native-quick-base64';
+//import { SRPClient } from 'srp6a';
 
 import SRP6aClient from './SRP6a';  // Update the path based on your project structure
 
@@ -46,7 +47,6 @@ const sessionCmd0 = async (publicKey, clientUserName) => {
     const sessionData = new SessionData();    
     const s2SessionCmd0 = new S2SessionCmd0();  // Create a new instance of S2SessionCmd0   
     const sec2Payload = new Sec2Payload();  // Create a new instance of Sec2Payload
-
 /*     const srp = new SRP6a(clientUserName, clientPassword); // Create SRP6a instance */
 
     //const publicKey = srpInstance.publicKeyBytes;
@@ -60,7 +60,7 @@ const sessionCmd0 = async (publicKey, clientUserName) => {
     
     sessionData.setSecVer(SecSchemeVersion.SECSCHEME2); // Set the sec_ver field using the setter
     sessionData.setSec2(sec2Payload); // Set the proto field in SessionData with Sec2Payload
-    console.log("Serializing...")
+    console.log("Serializing... ")
     const body = sessionData.serializeBinary();
     console.log("Done serializing");
 
@@ -84,7 +84,7 @@ const sessionCmd0 = async (publicKey, clientUserName) => {
 // Assuming the response is in binary protobuf format
 const responseData = await response.arrayBuffer();
 if (responseData.byteLength > 0) {
-  console.log("Response received, length: " + responseData.byteLength);
+  console.log("Response received, length : " + responseData.byteLength);
 } else {
   console.log('No response received');
 }
@@ -174,16 +174,17 @@ const sessionCmd1 = async (clientProof) => {
 
 export default function App() {
 
-  
+  const encoder = new TextEncoder();
 
-  const clientUserName = "wifiprov"
-  const clientPassword = "abcd1234"
+  const clientUserName = encoder.encode("wifiprov")
+  const clientPassword = encoder.encode("abcd1234")
 
   const [counter, setCounter] = useState(0);
   const [response, setResponse] = useState("")
   //const srp = new SRP6a(clientUserName, clientPassword); // Create SRP6a instance
   console.log("Creating SRP6a instance...");
   const srp = new SRP6aClient(clientUserName, clientPassword);
+  const srpClient = new SRPClient('default', crypto.randomBytes);
   console.log("SRP6a client instance created");
   //const srpClient = new SRPClient('default', crypto.randomBytes);
   const handleClick = async () => {
@@ -198,7 +199,7 @@ export default function App() {
 
     //CMD_0
     console.log("Getting public key")
-    const publicKey = srp.getPublicKey();
+    const publicKey = bigInt(srp.getPublicKey()).toString();
     console.log("Public key: " + publicKey);
     setCounter(prevCounter => prevCounter + 1);
     //await connectToEsp32AP()
