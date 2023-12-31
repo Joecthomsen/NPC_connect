@@ -184,9 +184,7 @@ export default function App() {
   //const srp = new SRP6a(clientUserName, clientPassword); // Create SRP6a instance
   console.log("Creating SRP6a instance...");
   const srp = new SRP6aClient(clientUserName, clientPassword);
-  const srpClient = new SRPClient('default', crypto.randomBytes);
   console.log("SRP6a client instance created");
-  //const srpClient = new SRPClient('default', crypto.randomBytes);
   const handleClick = async () => {
 
     const SHA256 = Crypto.CryptoDigestAlgorithm.SHA256

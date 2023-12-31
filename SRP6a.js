@@ -98,7 +98,7 @@ class SRP6aClient {
 
   async setSharedKey(salt, devicePublickey) {
 
-    const B = this.b64ToBigInt(devicePublickey).toString()
+    const B = this.b64ToBigInt(devicePublickey).toString(16)
     
 //Create x
     console.log("B: " + B)
@@ -150,10 +150,10 @@ class SRP6aClient {
     const bigInt_u = BigInt("0x" + this.u);  // Assuming this.u is a hexadecimal string
     console.log("bigInt_u: " + bigInt_u);
     
-    const bigInt_a = BigInt(this.a);
+    const bigInt_a = BigInt("0x" + this.a);
     console.log("bigInt_a: " + bigInt_a);
     
-    const bigInt_v = BigInt(this.v.toString()); // Convert to string first
+    const bigInt_v = BigInt("0x" + this.v.toString()); // Convert to string first
     console.log("bigInt_v: " + bigInt_v);
 
     const bigInt_x_2 = BigInt("0x" + this.x)
@@ -161,7 +161,7 @@ class SRP6aClient {
   
     console.log(typeof bigInt_devicePublicKey, typeof bigInt_k, typeof bigInt_u, typeof bigInt_a, typeof bigInt_v);
 
-    const base = BigInt(bigInt_devicePublicKey - (bigInt_k * bigInt_v))
+    const base = BigInt("0x" +  bigInt_devicePublicKey - (bigInt_k * bigInt_v))
     console.log("Base: " + base)
     const exponent = (bigInt_a + (bigInt_u * bigInt_x_2))
     console.log("Exponent: " + exponent)
