@@ -4,16 +4,74 @@ import { useState } from 'react';
 import WifiManager from 'react-native-wifi-reborn';
 import * as Crypto from 'expo-crypto';
 import bigInt from 'big-integer';
-/* import { SRP } from 'srp6a';
-import { SRPClient } from 'srp6a'; */
 import { btoa, atob } from 'react-native-quick-base64';
-//import { SRPClient } from 'srp6a';
-
 import SRP6aClient from './SRP6a';  // Update the path based on your project structure
 
-import { SessionData, SecSchemeVersion, Sec2Payload, S2SessionCmd0, S2SessionCmd1, Sec2MsgType } from "./my_proto_pb";
-//import { SRPClient } from 'srp6a';
+import { SessionData, SecSchemeVersion, Sec2Payload, S2SessionCmd0, S2SessionCmd1, Sec2MsgType, Sec1Payload, SessionCmd0, SessionResp0, Sec1MsgType, SessionCmd1  } from "./my_proto_pb";
+import { sharedKey, generateKeyPair, verify } from 'curve25519-js';
+//import { AES } from 'react-native-crypto-js';
+import { bytesToBase64 } from './base64';
 
+//import CryptoJS from 'react-native-crypto-js';
+
+import CryptoJS from 'crypto-js';
+import 'react-native-get-random-values';
+
+//import Aes from 'react-native-aes-crypto'
+//import  Aes  from 'react-native-aes-crypto';
+
+import * as AesCrypto from 'react-native-aes-crypto';
+
+
+function flipEndian(uint8Array) {
+  const newArray = new Uint8Array(uint8Array.length);
+
+  for (let i = 0; i < uint8Array.length; i++) {
+    newArray[i] = uint8Array[uint8Array.length - 1 - i];
+  }
+
+  return newArray;
+}
+
+
+function uint8ArrayToHexString(uint8Array) {
+  return Array.from(uint8Array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function xorByteArrays(arr1, arr2) {
+  const result = new Uint8Array(Math.min(arr1.length, arr2.length));
+
+  for (let i = 0; i < result.length; i++) {
+    result[i] = arr1[i] ^ arr2[i];
+  }
+
+  return result;
+}
+
+async function hashBytes(input) {
+  const textEncoder = new TextEncoder();
+  const inputBytes = textEncoder.encode(input);
+  const digestHex = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, bytesToHex(inputBytes));
+  const digestBytes = hexToBytes(digestHex);
+  return digestBytes;
+}
+
+function bytesToHex(bytes) {
+  return bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+}
+
+function hexToBytes(hex) {
+  return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+}
+
+// Function to generate a random 32-byte array
+function getRandomOfByteLength(length) {
+  const result = [];
+  for (let i = 0; i < length; i++) {
+    result.push(Math.floor(Math.random() * 8*256));
+  }
+  return new Uint8Array(result);
+}
 function bigIntToByteArray(bigIntValue, byteLength) {
   const byteArray = new Uint8Array(byteLength);
   let current = bigIntValue;
@@ -26,20 +84,26 @@ function bigIntToByteArray(bigIntValue, byteLength) {
   return byteArray;
 }
 
-function hexToB64(hexString) {
-  const byteArray = [];
-
-  // Iterate through pairs of characters in the hex string
-  for (let i = 0; i < hexString.length; i += 2) {
-    // Extract a pair of characters
-    const hexPair = hexString.substr(i, 2);
-
-    // Convert the pair to a byte and push it to the array
-    byteArray.push(parseInt(hexPair, 16));
+function uint8ArrayToBase64(uint8Array) {
+  if (!(uint8Array instanceof Uint8Array)) {
+    throw new Error('Input must be a Uint8Array');
   }
+
+  const byteArray = Array.from(uint8Array);
   const b64 = btoa(String.fromCharCode.apply(null, byteArray));
 
   return b64;
+}
+
+function stringToBase64(inputString) {
+  if (typeof inputString !== 'string') {
+    throw new Error('Input must be a string');
+  }
+
+  const utf8Bytes = new TextEncoder().encode(inputString);
+  const base64String = btoa(String.fromCharCode.apply(null, utf8Bytes));
+
+  return base64String;
 }
 
 const sessionCmd0 = async (publicKey, clientUserName) => {
@@ -182,41 +246,165 @@ export default function App() {
   const [counter, setCounter] = useState(0);
   const [response, setResponse] = useState("")
   //const srp = new SRP6a(clientUserName, clientPassword); // Create SRP6a instance
-  console.log("Creating SRP6a instance...");
-  const srp = new SRP6aClient(clientUserName, clientPassword);
-  console.log("SRP6a client instance created");
+  //console.log("Creating SRP6a instance...");
+
   const handleClick = async () => {
+    setCounter(response => response + 1)
 
-    const SHA256 = Crypto.CryptoDigestAlgorithm.SHA256
+    const random32byte = getRandomOfByteLength(32)
+    const keyPair = generateKeyPair(random32byte)
+    const privateKey = keyPair.private
+    const clientPubKey = keyPair.public
 
-    const testHash = "12345abcdefgfgfgfgfgfgfgfgfgfgf"
-    const hash = await Crypto.digestStringAsync(SHA256, testHash)
-    console.log("hash test2: " + hash)
-    console.log("Hash length: " + hash.length)
-    console.log("Hash type: " + typeof hash)
+    const base64String1 = uint8ArrayToBase64(clientPubKey)
+    const base64String2 = bytesToBase64(clientPubKey)
 
-    //CMD_0
-    console.log("Getting public key")
-    const publicKey = bigInt(srp.getPublicKey()).toString();
-    console.log("Public key: " + publicKey);
-    setCounter(prevCounter => prevCounter + 1);
-    //await connectToEsp32AP()
-    const publicKeyBigInt = bigInt(srp.getPublicKey());
-    const publicKeyBytes = bigIntToByteArray(publicKeyBigInt, 384);
-    console.log("public key lenght: " + publicKeyBytes.length);
-    const sessionResponse0 = await sessionCmd0(publicKeyBytes, clientUserName);
-    console.log(sessionResponse0.toObject());
 
-    //CMD_1
-    const devicePublicKey = sessionResponse0.getSr0().getDevicePubkey_asB64();
-    console.log("Device Public Key: " + devicePublicKey);
-    const deviceSalt = sessionResponse0.getSr0().getDeviceSalt_asB64();
-    console.log("Device Salt: " + deviceSalt);
-    await srp.setSharedKey(deviceSalt, devicePublicKey);
-    const proof = await srp.calculateProof(deviceSalt, devicePublicKey)
-    console.log("Client Proof: " + proof)
-    const sessionResponse1 = await sessionCmd1(proof);
-    console.log(sessionResponse1.toObject());
+    //const byteString = String.fromCharCode.apply(null, pubKey);
+
+
+
+    console.log("1: " + base64String1)
+    console.log("2: " + base64String2)
+
+    const sessionData = new SessionData();    
+    const sec1Payload = new Sec1Payload(); 
+    const s1SessionCmd0 = new SessionCmd0();  // Create a new instance of S2SessionCmd0   
+
+    s1SessionCmd0.setClientPubkey(base64String2)
+
+    sec1Payload.setMsg(Sec1MsgType.SESSION_COMMAND0)
+    sec1Payload.setSc0(s1SessionCmd0)
+    sessionData.setSecVer(SecSchemeVersion.SECSCHEME1)
+    sessionData.setSec1(sec1Payload)
+    const body = sessionData.serializeBinary();
+
+    const contentLength = body.length//new Uint8Array(body).length.toString();
+
+    console.log("content-length: " + contentLength);
+
+    const response = await fetch('http://192.168.4.1/prov-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/protobuf',
+        'Content-Length': contentLength.toString()
+      },
+      body: body
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const responseData = await response.arrayBuffer();
+    if (responseData.byteLength > 0) {
+      console.log("Response received, length: " + responseData.byteLength);
+    } else {
+      console.log('No response received');
+    }
+
+  const sessionData_1 = proto.SessionData.deserializeBinary(new Uint8Array(responseData));
+  const sec1 = sessionData_1.getSec1();
+  const devicePubkey = sec1.getSr0().getDevicePubkey_asU8()
+  const deviceRandom = sec1.getSr0().getDeviceRandom_asU8()
+  const hexDevicePubkey = uint8ArrayToHexString(devicePubkey)
+  const hexDeviceRandom = uint8ArrayToHexString(deviceRandom)
+  console.log("Pub: " + devicePubkey)
+  console.log("Rand: " + deviceRandom)
+  console.log(sec1.toObject())
+
+  const sKey = sharedKey(privateKey, devicePubkey)
+  const test = bytesToHex(sKey)
+  console.log("Key Before XOR: " + test)
+
+  console.log("Before flip: " + sKey)
+  const flippedKey = flipEndian(sKey)
+  console.log("After flip: " + flippedKey)
+
+  
+  const popString = 'abcd1234';
+  const textEncoder = new TextEncoder();
+  const popByteArray = textEncoder.encode(popString);
+
+  
+  const popByteHashed = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, popByteArray)
+  const popByteHashedByteArray = new Uint8Array(popByteHashed);
+  
+  const popHashHex = bytesToHex(popByteHashedByteArray);
+  console.log("Pop Hash:", popHashHex);  
+  
+  console.log("SharedKeyFlipped: " + flippedKey)
+  console.log("popByteHashedByteArray: " + popByteHashedByteArray)
+
+  console.log("SharedKeyFlipped Length: " + flippedKey.length)
+  console.log("popByteHashedByteArray Length: " + popByteHashedByteArray.length)
+
+  const popByteFlipped = flipEndian(popByteHashedByteArray)
+  
+  const xorKeyAndPop = xorByteArrays(sKey, popByteHashedByteArray)   
+  console.log("xoorKeyAndPop: " + xorKeyAndPop)
+  console.log("xoorKeyAndPop Length: " + xorKeyAndPop.length)
+
+
+  const hexSharedKey = bytesToHex(xorKeyAndPop).toString()
+
+  console.log("Shared key with PoP: " + hexSharedKey)
+
+  const randomToHex = bytesToBase64(deviceRandom)
+
+    ////////////////////// VIRKER HERTIL ///////////////////////
+
+
+    //const iv = CryptoJS.enc.Hex.parse(hexDeviceRandom);
+
+  console.log("Generating verifyer...")
+
+  // Encrypt using AES in Counter (CTR) mode
+
+  console.log("SharedKey.length: " + hexSharedKey.length)
+
+  const resultAES = await encryptData(hexDevicePubkey, hexSharedKey, hexDeviceRandom)// Aes.encrypt(hexDevicePubkey, hexSharedKey, hexDeviceRandom, 'aes-256-ctr'); // await encryptData(hexDevicePubkey, hexSharedKey) // await Aes.encrypt(hexDevicePubkey, hexSharedKey, randomToHex, 'aes-256-ctr')
+  console.log("AES: " + resultAES)
+
+  const sessionData_2 = new SessionData();    
+  const sec1Payload_2 = new Sec1Payload(); 
+  const s1SessionCmd1 = new SessionCmd1();
+
+  s1SessionCmd1.setClientVerifyData(verifyer)
+
+  sec1Payload_2.setMsg(Sec1MsgType.SESSION_COMMAND1)
+  sec1Payload_2.setSc1(s1SessionCmd1)
+
+  sessionData_2.setSecVer(SecSchemeVersion.SECSCHEME1)
+  sessionData_2.setSec1(sec1Payload_2)
+
+  const body_2 = sessionData_2.serializeBinary();
+
+  const contentLength_2 = body_2.length//new Uint8Array(body).length.toString();
+
+  console.log("content-length: " + contentLength_2);
+
+  const response_2 = await fetch('http://192.168.4.1/prov-session', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/protobuf',
+      'Content-Length': contentLength_2.toString()
+    },
+    body: body_2
+  });
+
+  if (!response_2.ok) {
+    throw new Error(`HTTP error! Status: ${response_2.status}`);
+  }
+
+  const responseData_2 = await response_2.arrayBuffer();
+  if (responseData_2.byteLength > 0) {
+    console.log("Response received, length: " + responseData_2.byteLength);
+    console.log("Response received: " + responseData_2.toObject());
+
+  } else {
+    console.log('No response received');
+  }
 
   }
 
