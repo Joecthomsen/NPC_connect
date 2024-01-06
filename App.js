@@ -13,6 +13,9 @@ import SRP6aClient from './SRP6a';  // Update the path based on your project str
 
 import { SessionData, SecSchemeVersion, Sec2Payload, S2SessionCmd0, S2SessionCmd1, Sec2MsgType } from "./my_proto_pb";
 //import { SRPClient } from 'srp6a';
+//import { rsa } from 'react-native-crypto';
+
+
 
 function bigIntToByteArray(bigIntValue, byteLength) {
   const byteArray = new Uint8Array(byteLength);
@@ -47,10 +50,6 @@ const sessionCmd0 = async (publicKey, clientUserName) => {
     const sessionData = new SessionData();    
     const s2SessionCmd0 = new S2SessionCmd0();  // Create a new instance of S2SessionCmd0   
     const sec2Payload = new Sec2Payload();  // Create a new instance of Sec2Payload
-/*     const srp = new SRP6a(clientUserName, clientPassword); // Create SRP6a instance */
-
-    //const publicKey = srpInstance.publicKeyBytes;
-    //const publicKey = Crypto.getRandomBytes(384); // Generate a random 384-byte public key
 
     s2SessionCmd0.setClientUsername(clientUserName);
     s2SessionCmd0.setClientPubkey(publicKey);
@@ -81,28 +80,25 @@ const sessionCmd0 = async (publicKey, clientUserName) => {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-// Assuming the response is in binary protobuf format
-const responseData = await response.arrayBuffer();
-if (responseData.byteLength > 0) {
-  console.log("Response received, length : " + responseData.byteLength);
-} else {
-  console.log('No response received');
-}
-
-//console.log("Raw binary data: " + new Uint8Array(responseData).toString());
-
-const sessionData_2 = proto.SessionData.deserializeBinary(new Uint8Array(responseData));
-
-// Now you can work with the deserialized object
-  const sec2 = sessionData_2.getSec2();
-  //console.log(sec2.toObject());
-  return sec2;
-
-  } catch (error) {
-    console.error('Error:', error);
-    // Handle errors here
+  // Assuming the response is in binary protobuf format
+  const responseData = await response.arrayBuffer();
+  if (responseData.byteLength > 0) {
+    console.log("Response received, length : " + responseData.byteLength);
+  } else {
+    console.log('No response received');
   }
-}
+
+  const sessionData_2 = proto.SessionData.deserializeBinary(new Uint8Array(responseData));
+
+  const sec2 = sessionData_2.getSec2();
+    //console.log(sec2.toObject());
+    return sec2;
+
+    } catch (error) {
+      console.error('Error:', error);
+      // Handle errors here
+    }
+  }
 
 const sessionCmd1 = async (clientProof) => {
   try {
@@ -189,31 +185,29 @@ export default function App() {
 
     const SHA256 = Crypto.CryptoDigestAlgorithm.SHA256
 
-    const testHash = "12345abcdefgfgfgfgfgfgfgfgfgfgf"
-    const hash = await Crypto.digestStringAsync(SHA256, testHash)
-    console.log("hash test2: " + hash)
-    console.log("Hash length: " + hash.length)
-    console.log("Hash type: " + typeof hash)
-
     //CMD_0
     console.log("Getting public key")
     const publicKey = bigInt(srp.getPublicKey()).toString();
-    console.log("Public key: " + publicKey);
     setCounter(prevCounter => prevCounter + 1);
     //await connectToEsp32AP()
     const publicKeyBigInt = bigInt(srp.getPublicKey());
     const publicKeyBytes = bigIntToByteArray(publicKeyBigInt, 384);
-    console.log("public key lenght: " + publicKeyBytes.length);
     const sessionResponse0 = await sessionCmd0(publicKeyBytes, clientUserName);
     console.log(sessionResponse0.toObject());
 
     //CMD_1
-    const devicePublicKey = sessionResponse0.getSr0().getDevicePubkey_asB64();
-    console.log("Device Public Key: " + devicePublicKey);
-    const deviceSalt = sessionResponse0.getSr0().getDeviceSalt_asB64();
-    console.log("Device Salt: " + deviceSalt);
-    await srp.setSharedKey(deviceSalt, devicePublicKey);
-    const proof = await srp.calculateProof(deviceSalt, devicePublicKey)
+    const devicePublicKeyB64 = sessionResponse0.getSr0().getDevicePubkey_asB64();
+    const devicePublicKeyHex = srp.base64ToHex(devicePublicKeyB64)
+    const devicePublicKeyByte = srp.hexStringToByteArray(devicePublicKeyHex)
+    console.log("Device Public Key: " + devicePublicKeyHex);
+
+    const deviceSaltb64 = sessionResponse0.getSr0().getDeviceSalt_asB64();
+    const deviceSaltHex = srp.base64ToHex(deviceSaltb64)
+    const deviceSaltBytes = srp.hexStringToByteArray(deviceSaltHex)
+
+    console.log("Device Salt: " + deviceSaltHex);
+    await srp.setSharedKey(deviceSaltBytes, devicePublicKeyByte);
+    const proof = await srp.calculateProof(deviceSaltBytes, devicePublicKeyByte)
     console.log("Client Proof: " + proof)
     const sessionResponse1 = await sessionCmd1(proof);
     console.log(sessionResponse1.toObject());

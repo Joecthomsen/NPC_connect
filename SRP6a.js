@@ -6,6 +6,9 @@ import { connectToSSIDPrefix, connectionStatus } from 'react-native-wifi-reborn'
 import {toByteArray} from 'base64-js'
 import { btoa, atob } from 'react-native-quick-base64';
 import { decode } from 'base-64';
+//import * as Crypto from 'expo-crypto';
+//import { rsa } from 'react-native-crypto';
+
 
 const SHA256 = Crypto.CryptoDigestAlgorithm.SHA512;
 
@@ -48,16 +51,49 @@ class SRP6aClient {
     this.devicePublickey
 
     this.a = this.getRandomOfLength(256);
-    console.log("N: " + this.N);
-    console.log("g: " + this.g);
 
     const decimalN = this.hexToBigInt(this.N)//BigInt('0x' + this.N); // Convert hex string to decimal string
 
-    this.A = bigInt(this.g).modPow(this.a, decimalN).toString();
-    console.log("this.A: " + this.A);
-    console.log("this.A.Length: " + this.A.length)
+    const gXoRa = this.xorByteArrays(this.g, this.a)
+    const resBigInt = this.byteArrayToBigInt(gXoRa)
+    const NtoBigInt = BigInt('0x' + this.N);
+    this.A = resBigInt.mod(NtoBigInt) //.mod(this.N)
     this.S
     this.sharedKey;
+  }
+
+/*   xorByteArrays(arr1, arr2) {
+    const result = new Uint8Array(Math.max(arr1.length, arr2.length));
+  
+    for (let i = 0; i < result.length; i++) {
+      result[i] = arr1[i] ^ arr2[i];
+    }
+  
+    return result;
+  } */
+
+  xorByteArrays(leftBytes, rightBytes) {
+    const maxLength = Math.max(leftBytes.length, rightBytes.length);
+    const resultBytes = new Uint8Array(maxLength);
+  
+    for (let i = 0; i < maxLength; i++) {
+      const leftByte = i < leftBytes.length ? leftBytes[i] : 0;
+      const rightByte = i < rightBytes.length ? rightBytes[i] : 0;
+  
+      resultBytes[i] = leftByte ^ rightByte;
+    }
+  
+    return resultBytes;
+  }
+
+  xorByteWithArray(byte, arr2) {
+    const result = new Uint8Array(Math.max(1, arr2.length));
+  
+    for (let i = 0; i < result.length; i++) {
+      result[i] = byte ^ arr2[i];
+    }
+  
+    return result;
   }
 
   async calculateProof(salt, devicePublickey){
@@ -98,50 +134,114 @@ class SRP6aClient {
 
   async setSharedKey(salt, devicePublickey) {
 
-    const B = this.b64ToBigInt(devicePublickey).toString(16)
+    //const B = this.b64ToBigInt(devicePublickey).toString(16)
+      //console.log("B: " + this.B)    
     
 //Create x
-    console.log("B: " + B)
-    const saltHex = this.b64ToBigInt(salt) // Uint8Array.from(atob(salt), c => c.charCodeAt(0)).toString(16);
+    
+    // Make byte representation and concationate s, i and p
     const Iu_p = this.Iu + ':' + this.p;
-    const hash_Iu_p = await this.hashData(Iu_p);
-  
-    this.x = await this.hashData(saltHex + hash_Iu_p.toString(16));
+    const encoder = new TextEncoder();
+    const userPasswordBytes = encoder.encode(Iu_p);
+    const saltBytes = new Uint8Array(salt)
+    const concatenatedData = this.concatenateUint8Arrays(saltBytes, userPasswordBytes) //new Uint8Array(saltBytes + userPasswordBytes)
+
+    this.x = await this.hashData(concatenatedData)
     console.log("this.x: " + this.x)
 
-  //Create v
-    const bigInt_N = bigInt(this.N, 16);
-    const bigInt_x = bigInt(this.x, 16);
-    const bigInt_g = bigInt(this.g, 16);
-    console.log("bigint_N: " + bigInt_N.toString());
-    console.log("bigInt_x: " + bigInt_x.toString());
-    console.log("bigInt_g: " + bigInt_g.toString());
-    this.v = bigInt_g.modPow(bigInt_x, bigInt_N);
-    console.log("this.v: " + this.v.toString(16));
-  
-  //Create k
-    const NHash = (await this.hashData(this.N)).toString(16)
-    console.log("NHashed: " + NHash)
-    const gHash = (await this.hashData(this.g)).toString(16)
-    console.log("gHash: " + gHash)
-    const concat_G_A = NHash + gHash
-    console.log("Concat N and G: " + concat_G_A)
+//Create v
+    
+    const gXoRx = this.xorByteWithArray(this.g, this.x)
+    console.log("xor: " + gXoRx)
+    const xorToBigInt = this.byteArrayToBigInt(gXoRx)
+    console.log("xorToBigInt: " + xorToBigInt)
+    const NtoBigInt = BigInt('0x' + this.N);
+    this.v = xorToBigInt.mod(NtoBigInt)
+    console.log("This.v: " + this.v)
 
+//Create k
+    //Create N hash
+    const NBytes = this.hexStringToByteArray(this.N)
+    console.log("NBytes: " + NBytes)
+    const NHash = await this.hashData(NBytes)//(await this.hashData(this.N)).toString(16)
+    console.log("NHashed: " + NHash)
+    
+    //Create g hash
+    const gBytes = this.hexStringToByteArray(this.g)
+    const gHash = await this.hashData(gBytes) //(await this.hashData(this.g)).toString(16)
+    console.log("gHash: " + gHash)
+
+    //Concationate N and g and hash it
+    const concat_G_A = this.concatenateUint8Arrays(NHash, gHash) //new Uint8Array(NHash + gHash)
+    console.log("Concat N and G: " + concat_G_A)
     this.k = await this.hashData(concat_G_A)//this.hashBytes([...NBytes, ...gBytes])
     console.log("this.k: " + this.k)
   
-  //Create u
-    console.log("this.A type: " + typeof this.A)
-    const AHashed = (await this.hashData(this.A)).toString(16)
-    console.log("AHashed: " + AHashed)
-    const BHashed = (await this.hashData(B)).toString(16)
-    console.log("BHashed: " + BHashed)  
-    const concat_A_B = AHashed + BHashed 
+//Create u
+    const ABytes = this.hexStringToByteArray(this.A)
+    console.log("ABytes: " + this.ABytes)
+    const AHash = await this.hashData(ABytes)
+    console.log("A Hashed: " + AHash)
+
+    const B = new Uint8Array(devicePublickey)
+
+    console.log("Device pubkey: " + B)
+
+    const BHash = await this.hashData(B)
+    console.log("BHashed: " + BHash)
+
+    const concat_A_B = this.concatenateUint8Arrays(AHash, BHash)
+    console.log("oncat A and B" + concat_A_B)
     this.u = await this.hashData(concat_A_B)
-    console.log("this.u: " + this.u)
-  
-  //Create S
-    const bigInt_devicePublicKey = this.b64ToBigInt(devicePublickey);
+    console.log("This.u: " + this.u)
+
+    
+//Create S
+
+    const BHex = BigInt(this.bytesToHex(B).toString());
+    console.log('BHex:', BHex, 'Type:', typeof BHex);
+
+    const kHex = BigInt(this.bytesToHex(this.k).toString());
+    console.log('kHex:', kHex, 'Type:', typeof kHex);
+
+    // v is already a BigInt
+    const vHex = BigInt(this.v.toString());
+    console.log("this.v:", vHex, 'Type:', typeof vHex);
+
+    const aHex = BigInt(this.bytesToHex(this.a).toString());
+    console.log('aHex:', aHex, 'Type:', typeof aHex);
+
+    const uHex = BigInt(this.bytesToHex(this.u).toString());
+    console.log('uHex:', uHex, 'Type:', typeof uHex);
+
+    const xHex = BigInt(this.bytesToHex(this.x).toString());
+    console.log('xHex:', xHex, 'Type:', typeof xHex);
+
+    const leftXorTerm = (BHex-(kHex * vHex)).toString(16)
+    console.log("LeftTerm: " + leftXorTerm)
+    const leftXorTermBytes = this.hexStringToByteArray(leftXorTerm)
+    console.log("leftXorBytes: " + leftXorTermBytes)
+
+    const rightXorTerm = aHex + (uHex * xHex).toString(16)
+    console.log("RightTerm: " + rightXorTerm)
+    const rightXorTermBytes = this.hexStringToByteArray(rightXorTerm)
+    console.log("Right xorBytes: " + rightXorTermBytes)
+
+    const xorResult = this.xorByteArrays(leftXorTermBytes, rightXorTermBytes)
+    console.log("xor result: " + xorResult)
+
+    const xorResultToBigInt = this.byteArrayToBigInt(xorResult)
+    const xorMod = xorResultToBigInt.mod(NtoBigInt)
+    const xorModToBytes = this.bigIntToByteArray(xorMod)
+
+    const sharedKeyBytes = await this.hashData(xorModToBytes)
+    console.log("Shared key bytes: " + sharedKeyBytes)
+    this.sharedKey = this.bytesToHex(sharedKeyBytes)
+    console.log("******* SHARED KEY: " + this.sharedKey + " ************")
+
+
+
+/*     const bigInt_devicePublicKey = this.b64ToBigInt(devicePublickey);
     console.log("BigInt_devicePublicKey: " + bigInt_devicePublicKey);
     
     const bigInt_k = BigInt("0x" + this.k);  // Assuming this.k is a hexadecimal string
@@ -174,17 +274,18 @@ class SRP6aClient {
   
   //Create shared key
     this.sharedKey = await this.hash(this.S)
-    console.log("******* SHARED KEY: " + this.sharedKey + " ************")
+    console.log("******* SHARED KEY: " + this.sharedKey + " ************") */
   }
 
 
   // Function to hash data using Expo Crypto
   async hashData(data) {
-    const digest = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA512,
-      data
-    );
-    return BigInt('0x' + digest);
+      // Data is a BufferSource (e.g., Uint8Array)
+      const dataHashed = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA512, data);
+      // Handle the hashed data as needed
+      const uint8ArrayFromHash = new Uint8Array(dataHashed);
+      return uint8ArrayFromHash
+
   }
 
   longToBytes(value) {
@@ -227,32 +328,39 @@ class SRP6aClient {
     return result;
 }
 
-/*   b64ToBigInt(data){
-    // Step 1: Decode the base64 string to a byte array
-    const byteCharacters = atob(data);
-    const byteArray = new Uint8Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteArray[i] = byteCharacters.charCodeAt(i);
-    }
-    return BigInt(Array.from(byteArray, byte => byte.toString()).join(""));
-  } */
-
+/* 
     async hash(input){
       const digest = (await Crypto.digestStringAsync(SHA256, input)).toString(16)
       return digest
-    }
+    } */
 
-    async hashBytes(input){
+/*     async hashBytes(input){
       const buffer = Buffer.from(input)
       const digest = await Crypto.digestStringAsync(SHA256, buffer.toString('hex'));
       return digest
-    }
+    } */
 
     getRandomOfLength(length) {
         const min = bigInt(2).pow(length  - 1); // 2^255
         const max = bigInt(2).pow(length).minus(1); // 2^256 - 1
 
-        return bigInt.randBetween(min, max);
+        const randomBigInt = bigInt.randBetween(min, max);
+
+        // Convert the big integer to a hexadecimal string
+        const hexString = randomBigInt.toString(16);
+      
+        // Pad the hexadecimal string with zeros to ensure an even length
+        const paddedHexString = hexString.length % 2 === 0 ? hexString : '0' + hexString;
+      
+        // Convert the hexadecimal string to a Uint8Array
+        const byteArray = new Uint8Array(paddedHexString.length / 2);
+      
+        for (let i = 0; i < byteArray.length; i++) {
+          const hexPair = paddedHexString.substr(i * 2, 2);
+          byteArray[i] = parseInt(hexPair, 16);
+        }
+      
+        return byteArray;
     }
 
     getNg(ngConst) {
@@ -276,6 +384,60 @@ class SRP6aClient {
   
       return byteArray;
   }
+
+  byteArrayToBigInt(arr) {
+    // Convert Uint8Array to hex string
+    const hexString = Array.from(arr)
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join('');
+  
+    // Parse hex string to big integer
+    const resultBigInt = bigInt(hexString, 16);
+  
+    return resultBigInt;
+  }
+  
+  bigIntToByteArray(bi, length) {
+    const byteArray = new Uint8Array(length);
+    const biBytes = bi.toArray(256, true);
+  
+    for (let i = 0; i < biBytes.length; i++) {
+      byteArray[i] = biBytes[i];
+    }
+  
+    return byteArray;
+  }
+
+  // Convert base64 to bytes
+  base64ToBytes = base64String => {
+    const binaryString = decode(base64String);
+    const bytes = [];
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes.push(binaryString[i]);
+    }
+    return bytes;
+  };
+
+  // Convert bytes to hex
+  bytesToHex = bytes => {
+    return bytes.map(byte => byte.toString(16).padStart(2, '0')).join('');
+  };
+
+  base64ToHex = base64String => {
+    // Step 1: Decode base64
+    const decodedData = atob(base64String);
+    // Step 2: Convert to hex
+    const hexValue = Array.from(decodedData).map(byte => byte.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+    return hexValue
+  }
+
+  concatenateUint8Arrays(arr1, arr2) {
+    const result = new Uint8Array(arr1.length + arr2.length);
+    result.set(arr1, 0);
+    result.set(arr2, arr1.length);
+    return result;
+  }
+
   
 }
  
