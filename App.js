@@ -8,6 +8,10 @@ import bigInt from 'big-integer';
 import { SRPClient } from 'srp6a'; */
 import { btoa, atob } from 'react-native-quick-base64';
 //import { SRPClient } from 'srp6a';
+global.Buffer = require('buffer').Buffer;
+
+import { SRP } from 'srp6a';
+
 
 import SRP6aClient from './SRP6a';  // Update the path based on your project structure
 
@@ -172,6 +176,13 @@ const sessionCmd1 = async (clientProof) => {
   }
 }
 
+const getRandomOfLength = (length) => {
+  const min = bigInt(2).pow(length  - 1); // 2^255
+  const max = bigInt(2).pow(length).minus(1); // 2^256 - 1
+
+  return bigInt.randBetween(min, max);
+}
+
 export default function App() {
 
   const encoder = new TextEncoder();
@@ -181,42 +192,12 @@ export default function App() {
 
   const [counter, setCounter] = useState(0);
   const [response, setResponse] = useState("")
-  //const srp = new SRP6a(clientUserName, clientPassword); // Create SRP6a instance
-  console.log("Creating SRP6a instance...");
-  const srp = new SRP6aClient(clientUserName, clientPassword);
+  console.log("Creating SRP6a instance..");
+  const srp = new SRP('default', getRandomOfLength(256));
+
   console.log("SRP6a client instance created");
+
   const handleClick = async () => {
-
-    const SHA256 = Crypto.CryptoDigestAlgorithm.SHA256
-
-    const testHash = "12345abcdefgfgfgfgfgfgfgfgfgfgf"
-    const hash = await Crypto.digestStringAsync(SHA256, testHash)
-    console.log("hash test2: " + hash)
-    console.log("Hash length: " + hash.length)
-    console.log("Hash type: " + typeof hash)
-
-    //CMD_0
-    console.log("Getting public key")
-    const publicKey = bigInt(srp.getPublicKey()).toString();
-    console.log("Public key: " + publicKey);
-    setCounter(prevCounter => prevCounter + 1);
-    //await connectToEsp32AP()
-    const publicKeyBigInt = bigInt(srp.getPublicKey());
-    const publicKeyBytes = bigIntToByteArray(publicKeyBigInt, 384);
-    console.log("public key lenght: " + publicKeyBytes.length);
-    const sessionResponse0 = await sessionCmd0(publicKeyBytes, clientUserName);
-    console.log(sessionResponse0.toObject());
-
-    //CMD_1
-    const devicePublicKey = sessionResponse0.getSr0().getDevicePubkey_asB64();
-    console.log("Device Public Key: " + devicePublicKey);
-    const deviceSalt = sessionResponse0.getSr0().getDeviceSalt_asB64();
-    console.log("Device Salt: " + deviceSalt);
-    await srp.setSharedKey(deviceSalt, devicePublicKey);
-    const proof = await srp.calculateProof(deviceSalt, devicePublicKey)
-    console.log("Client Proof: " + proof)
-    const sessionResponse1 = await sessionCmd1(proof);
-    console.log(sessionResponse1.toObject());
 
   }
 
