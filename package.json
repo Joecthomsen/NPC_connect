@@ -15,6 +15,7 @@
     "big-integer": "^1.6.52",
     "buffer": "^6.0.3",
     "crypto": "^1.0.1",
+    "crypto-es": "^2.1.0",
     "crypto-js": "^4.2.0",
     "curve25519-js": "^0.0.4",
     "expo": "~49.0.15",

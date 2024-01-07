@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Button, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import WifiManager from 'react-native-wifi-reborn';
-import * as Crypto from 'expo-crypto';
+
 import bigInt from 'big-integer';
 import { btoa, atob } from 'react-native-quick-base64';
 import SRP6aClient from './SRP6a';  // Update the path based on your project structure
@@ -13,15 +13,16 @@ import { sharedKey, generateKeyPair, verify } from 'curve25519-js';
 import { bytesToBase64 } from './base64';
 
 //import CryptoJS from 'react-native-crypto-js';
-
+import * as Crypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
+import * as AesCrypto from 'react-native-aes-crypto'; //Virker ikke
+import CryptoES from 'crypto-es';
 import 'react-native-get-random-values';
+
+//import { decrypt, encrypt, randomKey} from 'react-native-aes-crypto'
 
 //import Aes from 'react-native-aes-crypto'
 //import  Aes  from 'react-native-aes-crypto';
-
-import * as AesCrypto from 'react-native-aes-crypto';
-
 
 function flipEndian(uint8Array) {
   const newArray = new Uint8Array(uint8Array.length);
@@ -350,27 +351,57 @@ export default function App() {
 
   console.log("Shared key with PoP: " + hexSharedKey)
 
-  const randomToHex = bytesToBase64(deviceRandom)
+  const randomToHex = bytesToHex(deviceRandom)//bytesToBase64(deviceRandom)
 
-    ////////////////////// VIRKER HERTIL ///////////////////////
+    // Your plaintext message
+    const plaintext = 'Hello, World Motha fucka!';  //Insert in encrypt dunction and it works
+
+    const devicePubKeyString = bytesToHex(devicePubkey).toString(16)
+    console.log("Pubkey to encrypt: " + devicePubKeyString)
+    // Your encryption key and IV (Initialization Vector)
+    const key = CryptoJS.enc.Hex.parse(hexSharedKey); // 128-bit key
+    const iv = CryptoJS.enc.Hex.parse(randomToHex); // 128-bit IV
+    const publicKeyForEncryption = CryptoJS.enc.Hex.parse(devicePubKeyString)
+
+    // Encrypt the message using AES-CTR
+    const ciphertext = CryptoJS.AES.encrypt(devicePubKeyString, key, {
+      mode: CryptoJS.mode.CTR,
+      iv: iv,
+    });
+
+    // Get the encrypted message in hexadecimal representation
+    const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
+    console.log('Encrypted Hex:', encryptedHex);
 
 
-    //const iv = CryptoJS.enc.Hex.parse(hexDeviceRandom);
+    // Decrypt the message using AES-CTR
+    const decryptedBytes = CryptoJS.AES.decrypt(
+      { ciphertext: CryptoJS.enc.Hex.parse(encryptedHex) },
+      key,
+      {
+        mode: CryptoJS.mode.CTR,
+        iv: iv,
+      }
+    );
+
+    // Convert the decrypted bytes to a string
+    const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
+    console.log('Decrypted Text:', decryptedText.toString());
+
+      // Send messages
 
   console.log("Generating verifyer...")
 
-  // Encrypt using AES in Counter (CTR) mode
-
-  console.log("SharedKey.length: " + hexSharedKey.length)
-
-  const resultAES = await encryptData(hexDevicePubkey, hexSharedKey, hexDeviceRandom)// Aes.encrypt(hexDevicePubkey, hexSharedKey, hexDeviceRandom, 'aes-256-ctr'); // await encryptData(hexDevicePubkey, hexSharedKey) // await Aes.encrypt(hexDevicePubkey, hexSharedKey, randomToHex, 'aes-256-ctr')
-  console.log("AES: " + resultAES)
 
   const sessionData_2 = new SessionData();    
   const sec1Payload_2 = new Sec1Payload(); 
   const s1SessionCmd1 = new SessionCmd1();
 
-  s1SessionCmd1.setClientVerifyData(verifyer)
+  const encryptionInBytes = hexToBytes(encryptedHex)
+
+  const cipherToBytes = new Uint8Array(cipherToBytes)
+
+  s1SessionCmd1.setClientVerifyData(encryptedHex)
 
   sec1Payload_2.setMsg(Sec1MsgType.SESSION_COMMAND1)
   sec1Payload_2.setSc1(s1SessionCmd1)

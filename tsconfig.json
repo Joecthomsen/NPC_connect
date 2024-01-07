@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "node"
+  },
+  "include": [
+    "src/**/*.ts",
+    "node_modules/react-native-aes-crypto/index.d.ts"
+  ],
+  "extends": "expo/tsconfig.base"
+}
