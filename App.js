@@ -364,7 +364,7 @@ export default function App() {
     const publicKeyForEncryption = CryptoJS.enc.Hex.parse(devicePubKeyString)
 
     // Encrypt the message using AES-CTR
-    const ciphertext = CryptoJS.AES.encrypt(devicePubKeyString, key, {
+    const ciphertext = CryptoJS.AES.encrypt(publicKeyForEncryption, key, {
       mode: CryptoJS.mode.CTR,
       iv: iv,
     });
@@ -373,9 +373,9 @@ export default function App() {
     const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
     console.log('Encrypted Hex:', encryptedHex);
 
-
+    //DECRYPT
     // Decrypt the message using AES-CTR
-    const decryptedBytes = CryptoJS.AES.decrypt(
+/*     const decryptedBytes = CryptoJS.AES.decrypt(
       { ciphertext: CryptoJS.enc.Hex.parse(encryptedHex) },
       key,
       {
@@ -386,9 +386,8 @@ export default function App() {
 
     // Convert the decrypted bytes to a string
     const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
-    console.log('Decrypted Text:', decryptedText.toString());
+    console.log('Decrypted Text:', decryptedText.toString()); */
 
-      // Send messages
 
   console.log("Generating verifyer...")
 
@@ -399,9 +398,9 @@ export default function App() {
 
   const encryptionInBytes = hexToBytes(encryptedHex)
 
-  const cipherToBytes = new Uint8Array(cipherToBytes)
+  const cipherToBytes = new Uint8Array(encryptionInBytes)
 
-  s1SessionCmd1.setClientVerifyData(encryptedHex)
+  s1SessionCmd1.setClientVerifyData(cipherToBytes)
 
   sec1Payload_2.setMsg(Sec1MsgType.SESSION_COMMAND1)
   sec1Payload_2.setSc1(s1SessionCmd1)
