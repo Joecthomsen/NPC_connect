@@ -156,27 +156,14 @@ class Provisioner{
         const popByteHashed = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, popByteArray)
         const popByteHashedByteArray = new Uint8Array(popByteHashed);
 
-        const xorKeyAndPop = this.xorByteArrays(this.sharedKey, popByteHashedByteArray)   
-        console.log("xoorKeyAndPop: " + xorKeyAndPop)
+        //const xorKeyAndPop = this.xorByteArrays(this.sharedKey, popByteHashedByteArray)   
+        this.sharedKey = this.xorByteArrays(this.sharedKey, popByteHashedByteArray)   
 
-        const hexSharedKey = this.bytesToHex(xorKeyAndPop).toString()
+        console.log("xoorKeyAndPop: " + this.sharedKey)
+        const hexSharedKey = this.bytesToHex(this.sharedKey).toString()
+        console.log("Shared key with PoP: " + this.sharedKey)
       
-        console.log("Shared key with PoP: " + hexSharedKey)
-      
-        const randomToHex = this.bytesToHex(this.deviceRandom)//bytesToBase64(deviceRandom)
-       
-        const devicePubKeyString = this.bytesToHex(this.devicePublicKey).toString(16)
-        console.log("Pubkey to encrypt: " + devicePubKeyString)
-        // Your encryption key and IV (Initialization Vector)
-        const key = CryptoJS.enc.Hex.parse(hexSharedKey); // 128-bit key
-        const iv = CryptoJS.enc.Hex.parse(randomToHex); // 128-bit IV
-        const publicKeyForEncryption = CryptoJS.enc.Hex.parse(devicePubKeyString)
-    
-        // Encrypt the message using AES-CTR
-        const ciphertext = CryptoJS.AES.encrypt(publicKeyForEncryption, key, {
-        mode: CryptoJS.mode.CTR,
-        iv: iv,
-        });
+        const ciphertext = this.encryptData(this.devicePublicKey)
     
         // Get the encrypted message in hexadecimal representation
         const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
@@ -257,6 +244,42 @@ class Provisioner{
         console.log("Decrypted key: " + decryptedKey)
         console.log("My public key: " + this.clientPublicKey)
     }
+
+    encryptData(data){
+
+        const hexSharedKey = this.bytesToHex(this.sharedKey).toString()
+        console.log("shared key")
+        const randomToHex = this.bytesToHex(this.deviceRandom)//bytesToBase64(deviceRandom)
+        console.log("Random")
+        const dataHex = this.bytesToHex(data).toString(16)
+        console.log("dataHex")
+
+        const key = CryptoJS.enc.Hex.parse(hexSharedKey); // 128-bit key
+        const iv = CryptoJS.enc.Hex.parse(randomToHex); // 128-bit IV
+        const dataToEncrypt = CryptoJS.enc.Hex.parse(dataHex)
+    
+        // Encrypt the message using AES-CTR
+        const ciphertext = CryptoJS.AES.encrypt(dataToEncrypt, key, {
+            mode: CryptoJS.mode.CTR,
+            iv: iv,
+        });
+        return ciphertext
+    }
+
+    /*         const randomToHex = this.bytesToHex(this.deviceRandom)//bytesToBase64(deviceRandom)
+       
+        const devicePubKeyString = this.bytesToHex(this.devicePublicKey).toString(16)
+        console.log("Pubkey to encrypt: " + devicePubKeyString)
+        // Your encryption key and IV (Initialization Vector)
+        const key = CryptoJS.enc.Hex.parse(hexSharedKey); // 128-bit key
+        const iv = CryptoJS.enc.Hex.parse(randomToHex); // 128-bit IV
+        const publicKeyForEncryption = CryptoJS.enc.Hex.parse(devicePubKeyString)
+    
+        // Encrypt the message using AES-CTR
+        const ciphertext = CryptoJS.AES.encrypt(publicKeyForEncryption, key, {
+        mode: CryptoJS.mode.CTR,
+        iv: iv,
+        }); */
 
 
     getRandomOfByteLength(length) {
