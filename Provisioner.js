@@ -5,6 +5,7 @@ import { WiFiScanMsgType, WiFiScanPayload, CmdScanStart } from './wifi_pb'
 import * as Crypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
 import { TextEncoder } from 'text-encoding';
+import bigInt from 'big-integer';
 
 
 
@@ -31,7 +32,7 @@ class Provisioner{
         }
         this.sharedKey = sharedKey(this.clientPrivateKey, this.devicePublicKey)
         await this._sendSessionCmd1()
-        //this.verifyDevice()
+        this.verifyDevice()
     }
 
     async scanForWiFi(){
@@ -60,6 +61,7 @@ class Provisioner{
 
             console.log("Serializing...")
             const body = wifiScanPayload.serializeBinary();
+            const encryptedBody = this.encryptData(body)
             const contentLength = body.length
 
             console.log("Sending scan request...")
@@ -69,7 +71,7 @@ class Provisioner{
                     'Content-Type': 'application/protobuf',
                     'Content-Length': contentLength.toString()
                 },
-                body: body
+                body: encryptedBody
               });
             
             console.log("Request sendt...")
@@ -166,14 +168,14 @@ class Provisioner{
         const ciphertext = this.encryptData(this.devicePublicKey)
     
         // Get the encrypted message in hexadecimal representation
-        const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
+/*         const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
         console.log('Encrypted Hex:', encryptedHex);
 
         const encryptionInBytes = this.hexToBytes(encryptedHex)
       
-        const cipherToBytes = new Uint8Array(encryptionInBytes)
+        const cipherToBytes = new Uint8Array(encryptionInBytes) */
       
-        s1SessionCmd1.setClientVerifyData(cipherToBytes)
+        s1SessionCmd1.setClientVerifyData(ciphertext)
       
         sec1Payload_2.setMsg(Sec1MsgType.SESSION_COMMAND1)
         sec1Payload_2.setSc1(s1SessionCmd1)
@@ -204,6 +206,8 @@ class Provisioner{
         const sec1 = sessionData_3.getSec1();
         this.deviceVerify = sec1.getSr1().getDeviceVerifyData_asU8()
 
+        console.log("Device response: ", sessionData_3.toObject())
+
         console.log("Device verifyer: " + this.deviceVerify)
 
 /*         if (responseData_2.byteLength > 0) {
@@ -218,41 +222,141 @@ class Provisioner{
 
     verifyDevice(){
 
-        const randomToHex = this.bytesToHex(this.deviceRandom)//bytesToBase64(deviceRandom)
-        const hexSharedKey = this.bytesToHex(this.sharedKey).toString()
+/*         // Your plaintext message
+    const plaintext = 'Hello, World!';
+
+    // Your encryption key and IV (Initialization Vector)
+    const key = CryptoJS.enc.Hex.parse('2b7e151628aed2a6abf7158809cf4f3c'); // 128-bit key
+    const iv = CryptoJS.enc.Hex.parse('f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff'); // 128-bit IV
+
+    // Encrypt the message using AES-CTR
+    const ciphertext = CryptoJS.AES.encrypt(plaintext, key, {
+    mode: CryptoJS.mode.CTR,
+    iv: iv,
+    });
+
+    // Get the encrypted message in hexadecimal representation
+    const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
+
+    console.log('Encrypted Hex:', encryptedHex);
+
+    // Decrypt the message using AES-CTR
+    const decryptedBytes = CryptoJS.AES.decrypt(
+        { ciphertext: CryptoJS.enc.Hex.parse(encryptedHex) },
+        key,
+        {
+        mode: CryptoJS.mode.CTR,
+        iv: iv,
+        }
+    );
+ */
+
+        const randomToHex = this.bytesToHex(this.deviceRandom).toString(16)//bytesToBase64(deviceRandom)
+
+        // Parse the hex string to a decimal, add 4, and then convert back to hex
+        const modifiedHexValue = (BigInt("0x" + randomToHex) + 4n).toString(16);
+        console.log("TEST::: " + modifiedHexValue )
+
+        
+        const hexSharedKey = this.bytesToHex(this.sharedKey).toString(16)
         const verifyToHex = this.bytesToHex(this.deviceVerify).toString(16)
+
+        console.log("Raw device verify: " +this.deviceVerify)
+        console.log("hexSharedKey:", hexSharedKey);
+        console.log("randomToHex: ", randomToHex);
+        console.log("verifyToHex: ", verifyToHex);
 
         // Your encryption key and IV (Initialization Vector)
         const key = CryptoJS.enc.Hex.parse(hexSharedKey); // 128-bit key
-        const iv = CryptoJS.enc.Hex.parse(randomToHex); // 128-bit IV
-        const verifyString = CryptoJS.enc.Hex.parse(verifyToHex)
-
-        console.log("Decrypting....")
+        const iv = CryptoJS.enc.Hex.parse(modifiedHexValue); // 128-bit IV
+        const data = CryptoJS.enc.Hex.parse(verifyToHex);
 
 
+        console.log("Data: " + data)
+
+        console.log("Key:", key);
+        console.log("IV:", iv);
+        console.log("Data Object: ", data)
+        
+        console.log("Decrypting....");
+
+        
+        for(let i = 0 ; i < 20 ; i++){
+
+            const randomToHex2 = this.bytesToHex(this.deviceRandom).toString(16)//bytesToBase64(deviceRandom)
+            const modifiedHexValue2 = (BigInt("0x" + randomToHex2) + BigInt(i)).toString(16);
+            const iv2 = CryptoJS.enc.Hex.parse(modifiedHexValue2); // 128-bit IV
+
+            const testKey = CryptoJS.enc.Hex.parse('00000000')
+
+            const decryptedBytes2 = CryptoJS.AES.decrypt(
+                verifyToHex,
+                key,
+                {
+                    format: CryptoJS.format.Hex,
+                    mode: CryptoJS.mode.CTR,
+                    iv: iv2,
+                }
+            );
+
+            
+            //const decryptedValue2 = decryptedBytes2.toString(CryptoJS.enc.Utf8);
+
+            console.log("Iterration: " + i + " decrypt value: "  + decryptedBytes2 + " iv: " + modifiedHexValue2 + "  result object: ", decryptedBytes2)
+
+        }
+
+
+        
         const decryptedBytes = CryptoJS.AES.decrypt(
-            { ciphertext: verifyString },
+            { ciphertext: data },
             key,
             {
-              mode: CryptoJS.mode.CTR,
-              iv: iv,
+                format: CryptoJS.format.Hex,
+                mode: CryptoJS.mode.CTR,
+                iv: iv,
             }
-          );
-          
-          // Convert the decrypted bytes to a string
-        const decryptedKey = decryptedBytes.toString(CryptoJS.enc.Utf8);
-        console.log("Decrypted key: " + decryptedKey)
-        console.log("My public key: " + this.clientPublicKey)
-    }
+        );
+
+
+        console.log("Decrypted Bytes object: ", decryptedBytes);
+
+        if (decryptedBytes.hasOwnProperty("sigBytes")) {
+            console.log("Number of significant bytes:", decryptedBytes.sigBytes);
+            console.log("Decrypted Bytes array:", decryptedBytes.words);
+        }
+
+        const decryptedValue2 = decryptedBytes.toString(CryptoJS.enc.Utf8);
+        console.log("Decrypted Value:", decryptedValue2);
+
+
+
+        console.log("Decrypteed Bytes object: ", decryptedBytes)
+        console.log("Decrypted Bytes string: " + decryptedBytes)
+
+        const decryptedValue = decryptedBytes.toString(CryptoJS.enc.Utf8);
+        console.log("Decrypted Value:", decryptedValue);
+        
+        // Convert the decrypted bytes to a string
+/*         const decryptedKey = decryptedBytes.toString(CryptoJS.enc.Utf8);
+        const decryptedHex = CryptoJS.enc.Hex.stringify(decryptedBytes); */
+
+        
+/* 
+        console.log("Decrypted key: " + decryptedKey);
+        console.log("Decrypted key hex: ", decryptedHex);
+        //console.log("verifyString Hex:", CryptoJS.enc.Hex.stringify(verifyString));
+        console.log("Decrypted Bytes Hex:", decryptedHex); */
+
+        console.log("My public key: " + this.clientPublicKey);
+       
+    } 
 
     encryptData(data){
 
         const hexSharedKey = this.bytesToHex(this.sharedKey).toString()
-        console.log("shared key")
         const randomToHex = this.bytesToHex(this.deviceRandom)//bytesToBase64(deviceRandom)
-        console.log("Random")
         const dataHex = this.bytesToHex(data).toString(16)
-        console.log("dataHex")
 
         const key = CryptoJS.enc.Hex.parse(hexSharedKey); // 128-bit key
         const iv = CryptoJS.enc.Hex.parse(randomToHex); // 128-bit IV
@@ -263,23 +367,12 @@ class Provisioner{
             mode: CryptoJS.mode.CTR,
             iv: iv,
         });
-        return ciphertext
-    }
 
-    /*         const randomToHex = this.bytesToHex(this.deviceRandom)//bytesToBase64(deviceRandom)
-       
-        const devicePubKeyString = this.bytesToHex(this.devicePublicKey).toString(16)
-        console.log("Pubkey to encrypt: " + devicePubKeyString)
-        // Your encryption key and IV (Initialization Vector)
-        const key = CryptoJS.enc.Hex.parse(hexSharedKey); // 128-bit key
-        const iv = CryptoJS.enc.Hex.parse(randomToHex); // 128-bit IV
-        const publicKeyForEncryption = CryptoJS.enc.Hex.parse(devicePubKeyString)
-    
-        // Encrypt the message using AES-CTR
-        const ciphertext = CryptoJS.AES.encrypt(publicKeyForEncryption, key, {
-        mode: CryptoJS.mode.CTR,
-        iv: iv,
-        }); */
+        const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
+        const encryptionInBytes = this.hexToBytes(encryptedHex)
+        const cipherToBytes = new Uint8Array(encryptionInBytes)
+        return cipherToBytes
+    }
 
 
     getRandomOfByteLength(length) {
