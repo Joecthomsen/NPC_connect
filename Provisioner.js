@@ -220,137 +220,7 @@ class Provisioner{
 
     }
 
-    verifyDevice(){
-
-/*         // Your plaintext message
-    const plaintext = 'Hello, World!';
-
-    // Your encryption key and IV (Initialization Vector)
-    const key = CryptoJS.enc.Hex.parse('2b7e151628aed2a6abf7158809cf4f3c'); // 128-bit key
-    const iv = CryptoJS.enc.Hex.parse('f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff'); // 128-bit IV
-
-    // Encrypt the message using AES-CTR
-    const ciphertext = CryptoJS.AES.encrypt(plaintext, key, {
-    mode: CryptoJS.mode.CTR,
-    iv: iv,
-    });
-
-    // Get the encrypted message in hexadecimal representation
-    const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
-
-    console.log('Encrypted Hex:', encryptedHex);
-
-    // Decrypt the message using AES-CTR
-    const decryptedBytes = CryptoJS.AES.decrypt(
-        { ciphertext: CryptoJS.enc.Hex.parse(encryptedHex) },
-        key,
-        {
-        mode: CryptoJS.mode.CTR,
-        iv: iv,
-        }
-    );
- */
-
-        const randomToHex = this.bytesToHex(this.deviceRandom).toString(16)//bytesToBase64(deviceRandom)
-
-        // Parse the hex string to a decimal, add 4, and then convert back to hex
-        const modifiedHexValue = (BigInt("0x" + randomToHex) + 4n).toString(16);
-        console.log("TEST::: " + modifiedHexValue )
-
-        
-        const hexSharedKey = this.bytesToHex(this.sharedKey).toString(16)
-        const verifyToHex = this.bytesToHex(this.deviceVerify).toString(16)
-
-        console.log("Raw device verify: " +this.deviceVerify)
-        console.log("hexSharedKey:", hexSharedKey);
-        console.log("randomToHex: ", randomToHex);
-        console.log("verifyToHex: ", verifyToHex);
-
-        // Your encryption key and IV (Initialization Vector)
-        const key = CryptoJS.enc.Hex.parse(hexSharedKey); // 128-bit key
-        const iv = CryptoJS.enc.Hex.parse(modifiedHexValue); // 128-bit IV
-        const data = CryptoJS.enc.Hex.parse(verifyToHex);
-
-
-        console.log("Data: " + data)
-
-        console.log("Key:", key);
-        console.log("IV:", iv);
-        console.log("Data Object: ", data)
-        
-        console.log("Decrypting....");
-
-        
-        for(let i = 0 ; i < 20 ; i++){
-
-            const randomToHex2 = this.bytesToHex(this.deviceRandom).toString(16)//bytesToBase64(deviceRandom)
-            const modifiedHexValue2 = (BigInt("0x" + randomToHex2) + BigInt(i)).toString(16);
-            const iv2 = CryptoJS.enc.Hex.parse(modifiedHexValue2); // 128-bit IV
-
-            const testKey = CryptoJS.enc.Hex.parse('00000000')
-
-            const decryptedBytes2 = CryptoJS.AES.decrypt(
-                verifyToHex,
-                key,
-                {
-                    format: CryptoJS.format.Hex,
-                    mode: CryptoJS.mode.CTR,
-                    iv: iv2,
-                }
-            );
-
-            
-            //const decryptedValue2 = decryptedBytes2.toString(CryptoJS.enc.Utf8);
-
-            console.log("Iterration: " + i + " decrypt value: "  + decryptedBytes2 + " iv: " + modifiedHexValue2 + "  result object: ", decryptedBytes2)
-
-        }
-
-
-        
-        const decryptedBytes = CryptoJS.AES.decrypt(
-            { ciphertext: data },
-            key,
-            {
-                format: CryptoJS.format.Hex,
-                mode: CryptoJS.mode.CTR,
-                iv: iv,
-            }
-        );
-
-
-        console.log("Decrypted Bytes object: ", decryptedBytes);
-
-        if (decryptedBytes.hasOwnProperty("sigBytes")) {
-            console.log("Number of significant bytes:", decryptedBytes.sigBytes);
-            console.log("Decrypted Bytes array:", decryptedBytes.words);
-        }
-
-        const decryptedValue2 = decryptedBytes.toString(CryptoJS.enc.Utf8);
-        console.log("Decrypted Value:", decryptedValue2);
-
-
-
-        console.log("Decrypteed Bytes object: ", decryptedBytes)
-        console.log("Decrypted Bytes string: " + decryptedBytes)
-
-        const decryptedValue = decryptedBytes.toString(CryptoJS.enc.Utf8);
-        console.log("Decrypted Value:", decryptedValue);
-        
-        // Convert the decrypted bytes to a string
-/*         const decryptedKey = decryptedBytes.toString(CryptoJS.enc.Utf8);
-        const decryptedHex = CryptoJS.enc.Hex.stringify(decryptedBytes); */
-
-        
-/* 
-        console.log("Decrypted key: " + decryptedKey);
-        console.log("Decrypted key hex: ", decryptedHex);
-        //console.log("verifyString Hex:", CryptoJS.enc.Hex.stringify(verifyString));
-        console.log("Decrypted Bytes Hex:", decryptedHex); */
-
-        console.log("My public key: " + this.clientPublicKey);
-       
-    } 
+   
 
     encryptData(data){
 
@@ -366,12 +236,52 @@ class Provisioner{
         const ciphertext = CryptoJS.AES.encrypt(dataToEncrypt, key, {
             mode: CryptoJS.mode.CTR,
             iv: iv,
+            padding: CryptoJS.pad.NoPadding
         });
 
         const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
         const encryptionInBytes = this.hexToBytes(encryptedHex)
         const cipherToBytes = new Uint8Array(encryptionInBytes)
         return cipherToBytes
+    }
+
+    verifyDevice(){
+        
+        // Your encryption key and IV (Initialization Vector)
+        const hexKey = this.bytesToHex(this.sharedKey)
+        const hexRandom = this.bytesToHex(this.deviceRandom)
+        // Add 6 by first converting to BigInt to avoid precision issues
+        const hexRandomBigInt = BigInt(`0x${hexRandom}`); 
+        const hexRandomPlusSix = (hexRandomBigInt + BigInt(2)).toString(16);
+        
+        const key = CryptoJS.enc.Hex.parse(hexKey); // 128-bit key
+        const iv = CryptoJS.enc.Hex.parse(hexRandomPlusSix); // 128-bit IV
+        const hexVerify = this.bytesToHex(this.deviceVerify)
+        
+
+        console.log("Hex random: " + hexRandom)
+        console.log('Hex random plus 6: ' + hexRandomPlusSix);
+        console.log('Shared Key: ' + hexKey);
+        console.log('Device verify: ' + hexVerify + '   Type: ' + typeof hexVerify);
+    
+        // Decrypt the message using AES-CTR
+        const decryptedBytes = CryptoJS.AES.decrypt(
+            { ciphertext: CryptoJS.enc.Hex.parse(hexVerify) },
+            key,
+            {
+                mode: CryptoJS.mode.CTR,
+                iv: iv,
+                padding: CryptoJS.pad.NoPadding
+            }
+        );
+
+        console.log("Decrypted Bytes:", decryptedBytes);
+
+        const decryptedHex = CryptoJS.enc.Hex.stringify(CryptoJS.lib.WordArray.create(decryptedBytes.words));
+
+        console.log("Decrypted Hex:", decryptedHex);
+        console.log("My public key: " + this.bytesToHex(this.clientPublicKey))
+
     }
 
 
@@ -401,6 +311,151 @@ class Provisioner{
     hexToBytes(hex) {
         return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
     }
+
+
+
+
+
+    verifyDevice_not_working(){
+
+        /*         // Your plaintext message
+            const plaintext = 'Hello, World!';
+        
+            // Your encryption key and IV (Initialization Vector)
+            const key = CryptoJS.enc.Hex.parse('2b7e151628aed2a6abf7158809cf4f3c'); // 128-bit key
+            const iv = CryptoJS.enc.Hex.parse('f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff'); // 128-bit IV
+        
+            // Encrypt the message using AES-CTR
+            const ciphertext = CryptoJS.AES.encrypt(plaintext, key, {
+            mode: CryptoJS.mode.CTR,
+            iv: iv,
+            });
+        
+            // Get the encrypted message in hexadecimal representation
+            const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
+        
+            console.log('Encrypted Hex:', encryptedHex);
+        
+            // Decrypt the message using AES-CTR
+            const decryptedBytes = CryptoJS.AES.decrypt(
+                { ciphertext: CryptoJS.enc.Hex.parse(encryptedHex) },
+                key,
+                {
+                mode: CryptoJS.mode.CTR,
+                iv: iv,
+                }
+            );
+         */
+        
+                const randomToHex = this.bytesToHex(this.deviceRandom).toString(16)//bytesToBase64(deviceRandom)
+        
+                // Parse the hex string to a decimal, add 4, and then convert back to hex
+                const modifiedHexValue = (BigInt("0x" + randomToHex) + 6n).toString(16);
+                console.log("TEST::: " + modifiedHexValue )
+        
+                
+                const hexSharedKey = this.bytesToHex(this.sharedKey).toString(16)
+                const verifyToHex = this.bytesToHex(this.deviceVerify).toString(16)
+        
+                console.log("Raw device verify: " +this.deviceVerify)
+                console.log("hexSharedKey:", hexSharedKey);
+                console.log("randomToHex: ", randomToHex);
+                console.log("verifyToHex: ", verifyToHex);
+        
+                // Your encryption key and IV (Initialization Vector)
+                const key = CryptoJS.enc.Hex.parse(hexSharedKey); // 128-bit key
+                const iv = CryptoJS.enc.Hex.parse(modifiedHexValue); // 128-bit IV
+                const data = CryptoJS.enc.Hex.parse(verifyToHex);
+        
+        
+                console.log("Data: " + data)
+        
+                console.log("Key:", key);
+                console.log("IV:", iv);
+                console.log("Data Object: ", data)
+                
+                console.log("Decrypting....");
+        
+                
+                for(let i = 0 ; i < 20 ; i++){
+        
+                    const randomToHex2 = this.bytesToHex(this.deviceRandom).toString(16)//bytesToBase64(deviceRandom)
+                    const modifiedHexValue2 = (BigInt("0x" + randomToHex2) + BigInt(i)).toString(16);
+                    const iv2 = CryptoJS.enc.Hex.parse(modifiedHexValue2); // 128-bit IV
+        
+        
+                    const decryptedBytes2 = CryptoJS.AES.decrypt(   //VIRKER!!!! tror jeg....
+                        verifyToHex,
+                        key,
+                        {
+                            mode: CryptoJS.mode.CTR,
+                            iv: iv2,
+                            padding: CryptoJS.pad.NoPadding
+                        }
+                    );
+                    
+        /*             if(i == 0){
+                        const decryptedValue2 = CryptoJS.enc.Utf8.stringify(decryptedBytes2);
+                        console.log("DECRYPTED::::: " + decryptedValue2)
+                    } */
+                    
+        
+                    console.log("Iterration: " + i + " decrypt value: "  + decryptedBytes2 + " iv: " + modifiedHexValue2 + "  result object: ", decryptedBytes2)
+        
+                }
+        
+        
+                
+                const decryptedBytes = CryptoJS.AES.decrypt(
+                    verifyToHex,
+                        key,
+                        {
+                            mode: CryptoJS.mode.CTR,
+                            iv: iv,
+                            padding: CryptoJS.pad.NoPadding
+                        }
+                );
+        
+        
+                console.log("Decrypted Bytes object: ", decryptedBytes);
+        
+                if (decryptedBytes.hasOwnProperty("sigBytes")) {
+                    console.log("Number of significant bytes:", decryptedBytes.sigBytes);
+                    console.log("Decrypted Bytes array:", decryptedBytes.words);
+                }
+        
+                const hexString = CryptoJS.enc.Hex.stringify(CryptoJS.lib.WordArray.create(decryptedBytes.words));        
+                //console.log("Decrypted bytes as array:", teest);
+        
+                //const decryptedValue2 = decryptedBytes.toString(CryptoJS.enc.Utf8);
+                console.log("Decrypted Value:", hexString);
+        
+        
+        
+                console.log("Decrypteed Bytes object: ", decryptedBytes)
+                console.log("Decrypted Bytes string: " + decryptedBytes)
+        
+                const decryptedValue = decryptedBytes.toString(CryptoJS.enc.Utf8);
+                console.log("Decrypted Value:", decryptedValue);
+                
+                // Convert the decrypted bytes to a string
+        /*         const decryptedKey = decryptedBytes.toString(CryptoJS.enc.Utf8);
+                const decryptedHex = CryptoJS.enc.Hex.stringify(decryptedBytes); */
+        
+                
+        /* 
+                console.log("Decrypted key: " + decryptedKey);
+                console.log("Decrypted key hex: ", decryptedHex);
+                //console.log("verifyString Hex:", CryptoJS.enc.Hex.stringify(verifyString));
+                console.log("Decrypted Bytes Hex:", decryptedHex); */
+        
+                console.log("My public key: " + this.bytesToHex( this.clientPublicKey));
+               
+            } 
+
+
+
+
       
 }
-export default Provisioner;
+export default Provisioner
