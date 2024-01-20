@@ -32,7 +32,12 @@ class Provisioner{
         }
         this.sharedKey = sharedKey(this.clientPrivateKey, this.devicePublicKey)
         await this._sendSessionCmd1()
-        this.verifyDevice()
+        if(this.verifyDevice()){
+            console.log('Secure session established!');
+            return;
+        } else {
+            throw new Error('Device verification failed');
+        }
     }
 
     async scanForWiFi(){
@@ -281,7 +286,8 @@ class Provisioner{
 
         console.log("Decrypted Hex:", decryptedHex);
         console.log("My public key: " + this.bytesToHex(this.clientPublicKey))
-
+        
+        return decryptedHex === this.bytesToHex(this.clientPublicKey)
     }
 
 
