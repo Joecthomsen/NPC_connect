@@ -18,7 +18,6 @@ export default function App() {
   }
 
   const scanForWiFi = async () => {
-    console.log("Test!")
     const res = await provisioner.scanForWiFi()
   }
 
