@@ -208,7 +208,6 @@ class Provisioner{
         const popByteHashed = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, popByteArray)
         const popByteHashedByteArray = new Uint8Array(popByteHashed);
 
-        //const xorKeyAndPop = this.xorByteArrays(this.sharedKey, popByteHashedByteArray)   
         this.sharedKey = this.xorByteArrays(this.sharedKey, popByteHashedByteArray)   
 
         console.log("xoorKeyAndPop: " + this.sharedKey)
@@ -216,14 +215,6 @@ class Provisioner{
         console.log("Shared key with PoP: " + this.sharedKey)
       
         const ciphertext = this.encryptData(this.devicePublicKey)
-    
-        // Get the encrypted message in hexadecimal representation
-/*         const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
-        console.log('Encrypted Hex:', encryptedHex);
-
-        const encryptionInBytes = this.hexToBytes(encryptedHex)
-      
-        const cipherToBytes = new Uint8Array(encryptionInBytes) */
       
         s1SessionCmd1.setClientVerifyData(ciphertext)
       
@@ -259,18 +250,7 @@ class Provisioner{
         console.log("Device response: ", sessionData_3.toObject())
 
         console.log("Device verifyer: " + this.deviceVerify)
-
-/*         if (responseData_2.byteLength > 0) {
-          console.log("Response received, length: " + responseData_2.byteLength);
-          console.log("Response received: ", sec1.toObject());
-      
-        } else {
-          console.log('No response received');
-        } */
-
     }
-
-   
 
     encryptData(data){
 
@@ -313,29 +293,21 @@ class Provisioner{
         return cipherToBytes
     }
 
-    verifyDevice(){
-        
+    decryptData(data){
+
         // Your encryption key and IV (Initialization Vector)
         const hexKey = this.bytesToHex(this.sharedKey)
         const hexRandom = this.bytesToHex(this.deviceRandom)
         // Add 6 by first converting to BigInt to avoid precision issues
         const hexRandomBigInt = BigInt(`0x${hexRandom}`);
-        console.log("AES counter: " + this.aes_ctr) 
         const hexRandomPlusSix = (hexRandomBigInt + BigInt(2)).toString(16);
-        
+
         const key = CryptoJS.enc.Hex.parse(hexKey); // 128-bit key
         const iv = CryptoJS.enc.Hex.parse(hexRandomPlusSix); // 128-bit IV
-        const hexVerify = this.bytesToHex(this.deviceVerify)
-        
 
-        console.log("Hex random: " + hexRandom)
-        console.log('Hex random plus 6: ' + hexRandomPlusSix);
-        console.log('Shared Key: ' + hexKey);
-        console.log('Device verify: ' + hexVerify + '   Type: ' + typeof hexVerify);
-    
-        // Decrypt the message using AES-CTR
-        const decryptedBytes = CryptoJS.AES.decrypt(
-            { ciphertext: CryptoJS.enc.Hex.parse(hexVerify) },
+        // Decrypt the ciphertext
+        const decrypted = CryptoJS.AES.decrypt(
+            {ciphertext: CryptoJS.enc.Hex.parse(this.bytesToHex(data))},
             key,
             {
                 mode: CryptoJS.mode.CTR,
@@ -344,16 +316,19 @@ class Provisioner{
             }
         );
 
-        console.log("Decrypted Bytes:", decryptedBytes);
+        const decryptedHex = decrypted.toString(CryptoJS.enc.Hex);
+        const decryptedBytes = this.hexToBytes(decryptedHex);
 
-        const decryptedHex = CryptoJS.enc.Hex.stringify(CryptoJS.lib.WordArray.create(decryptedBytes.words));
+        return decryptedBytes;
 
-        const counterIncrementValue = decryptedBytes.sigBytes/16
-        this.aes_ctr = parseInt(this.aes_ctr) + counterIncrementValue // Increment AES_CTR
-        console.log('this.counter after verification: ' + this.aes_ctr)
+    }
 
-        console.log("Decrypted Hex:", decryptedHex);
-        console.log("My public key: " + this.bytesToHex(this.clientPublicKey))
+    verifyDevice(){
+        
+        const decryptedBytes = this.decryptData(this.deviceVerify);
+        console.log("Decrypted bytes: ", decryptedBytes);
+        const decryptedHex = this.bytesToHex(decryptedBytes);
+        console.log("Decrypted hex: ", decryptedHex);
         
         return decryptedHex === this.bytesToHex(this.clientPublicKey)
     }
