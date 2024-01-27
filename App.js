@@ -8,17 +8,25 @@ import Provisioner from './Provisioner';
 
 export default function App() {
 
-  const provisioner = new Provisioner()
+  let provisioner// = new Provisioner()
   const [counter, setCounter] = useState("0")
 
   const handleSecureSession = async () => {
     setCounter(counter => {counter++})
-
+    provisioner = new Provisioner()
     await provisioner.establishSecureSession()
   }
 
   const scanForWiFi = async () => {
-    const res = await provisioner.scanForWiFi()
+    if(provisioner instanceof Provisioner){
+      try{
+        const res = await provisioner.scanForWiFi()
+        console.log(res)
+      }catch(err){
+        console.error(err)
+      }
+    }
+    //const res = await provisioner.scanForWiFi()
   }
 
   const handleEspConnect = async () => {

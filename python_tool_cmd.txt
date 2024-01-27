@@ -1,0 +1,1 @@
+python3 esp_prov.py --transport softap --sec_ver 1 --pop 'abcd1234' --verbose
