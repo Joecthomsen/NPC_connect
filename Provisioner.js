@@ -73,19 +73,33 @@ class Provisioner{
 
             const body = wifiScanPayload.serializeBinary();
             console.log("Serializing completed: " , body)
+            console.log("Hex : ", this.bytesToHex(body))
+
             console.log("encrypting...")
 
-            const encryptedBody = this.encryptData(body)
+            let chunk1 = CryptoJS.enc.Hex.parse( this.bytesToHex(body));
+            //let chunk2 = CryptoJS.enc.Hex.parse(this.bytesToHex(body))
+
+            const encyptedBody1 = this.encrypter.process(chunk1)//.toString()//this.encryptData(body)
+            const encyptedBody2 = this.encrypter.finalize()//.toString()
+
+            const encryptedBody = encyptedBody1 + encyptedBody2
+
+            console.log("Type:  " + typeof encryptedBody)
+
+            console.log("Encrypted body2: " + encryptedBody)
+            console.log("Encrypted body length: ", encryptedBody.length)
             console.log("Data encrypted.")
             
-            const contentLength = encryptedBody.length
+            const contentLength = body.length
 
+            console.log("Object: ", wifiScanPayload.toObject())
             console.log("Sending scan request...")  // Send start scan command
             const response = await fetch('http://192.168.4.1/prov-scan', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/octet-stream',
-                    'Content-Length': contentLength.toString()
+                    'Content-Length': "8"
                 },
                 body: encryptedBody
               });
@@ -440,59 +454,6 @@ class Provisioner{
         return cipherToBytes
     }
 
-    decryptData_Test(){
-
-        // Your encryption key and IV (Initialization Vector)
-
-        //Shared: 0x7ee4523c70686dd8306da23b3d682b3ea89056405ae4299fc0058a2a1e4020d8
-        // IV = '0x1f08051e7ea0eca8126e5444b6a498d2'
-
-        const hexKey = 'f741291d5d2bfbfdd1840087fdbc628b8bb768e344dbaf1306b26a09c19d48a4' 
-        const hexRandom = 'd5f8bf8173cfab6860d92cdfa9ec752e'
-
-        const byteRandom = this.hexToBytes(hexRandom)
-
-        // Add 6 by first converting to BigInt to avoid precision issues
-        //const hexRandomBigInt = BigInt(`0x${hexRandom}`);
-        //const hexRandomPlusSix = (hexRandomBigInt + BigInt(this.aes_ctr)).toString(16);
-
-        const data = '468710b0'
-
-        //const hexRandomPlus = (BigInt(hexRandom) + BigInt(0)).toString(16);
-        //console.log("Plus: " + hexRandomPlus)
-
-        const key = CryptoJS.enc.Hex.parse(hexKey); // 128-bit key
-        const iv = CryptoJS.enc.Hex.parse(hexRandom); // 128-bit IV
-        const dataWordArray = CryptoJS.enc.Hex.parse(data); 
-
-        console.log("dataWArray: " + dataWordArray);
-
-
-        // Decrypt the ciphertext
-        const decrypted = CryptoJS.AES.decrypt(
-            {ciphertext: dataWordArray},
-            key,
-            {
-                mode: CryptoJS.mode.CTR,
-                iv: iv,
-                //padding: CryptoJS.pad.AnsiX923
-                padding: CryptoJS.pad.NoPadding
-            }
-        );
-
-        console.log("Decrypted: " + decrypted);
-
-        //this.aes_ctr_incrementer(decrypted.sigBytes);   //Increment the aes counter
-
-        const decryptedHex = decrypted.toString(CryptoJS.enc.Hex);
-        const decryptedBytes = this.hexToBytes(decryptedHex);
-
-        console.log("decrypted data: " + decryptedHex);
-
-        return decryptedBytes;
-
-    }
-
     decryptData(data){
 
         // Your encryption key and IV (Initialization Vector)
@@ -540,13 +501,25 @@ class Provisioner{
     }
 
     verifyDevice(){
-        
-        const decryptedBytes = this.decryptData(this.deviceVerify);
-        console.log("Decrypted bytes: ", decryptedBytes);
-        const decryptedHex = this.bytesToHex(decryptedBytes);
-        console.log("Decrypted hex: ", decryptedHex);
-        
-        return decryptedHex === this.bytesToHex(this.clientPublicKey)
+
+        console.log("this.deviceVerify: ", this.deviceVerify);
+        console.log("this.deviceVerify length: ", this.deviceVerify.length);
+
+        const dataChunck_1 = CryptoJS.enc.Hex.parse(this.bytesToHex( this.deviceVerify.slice(0, 16)));
+        const dataChunck_2 = CryptoJS.enc.Hex.parse(this.bytesToHex(this.deviceVerify.slice(16, 32)));
+
+        const decryptedBytesChunck_1 = this.encrypter.process(dataChunck_1).toString()
+        const decryptedBytesChunck_2 = this.encrypter.process(dataChunck_2).toString()
+
+        console.log("Decrypted Bytes Chunk 1: ", decryptedBytesChunck_1)
+        console.log("Decrypted Bytes Chunk 2: ", decryptedBytesChunck_2)
+
+        const decryptedDeviceVerify = decryptedBytesChunck_1 + decryptedBytesChunck_2;
+
+        console.log("Client Public Key: ", this.bytesToHex(this.clientPublicKey))
+        console.log("Device verify: ", decryptedDeviceVerify)
+
+        return decryptedDeviceVerify === this.bytesToHex(this.clientPublicKey)
     }
 
 
