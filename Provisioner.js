@@ -50,7 +50,7 @@ class Provisioner{
     async scanForWiFi(){
         try {
 
-            console.log("Entering scan function.")
+            console.log("Entering scan function. ")
 
             const blocking = true
             const passive = false
