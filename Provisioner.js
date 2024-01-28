@@ -28,6 +28,9 @@ class Provisioner{
         this.sharedKey;
         this.deviceVerify
         this.aes_ctr = 0
+        this.iv;
+        this.encrypter;
+        this.decrypter;
     }
 
     async establishSecureSession(){
@@ -276,6 +279,9 @@ class Provisioner{
 
             this.devicePublicKey = sec1.getSr0().getDevicePubkey_asU8()
             this.deviceRandom = sec1.getSr0().getDeviceRandom_asU8()
+
+            console.log("Device random: " + this.bytesToHex(this.deviceRandom))
+
             console.log(sec1.toObject())
             return true
 
@@ -301,16 +307,74 @@ class Provisioner{
         console.log("xoorKeyAndPop: " + this.sharedKey)
         const hexSharedKey = this.bytesToHex(this.sharedKey).toString()
         console.log("Shared key with PoP: " + this.bytesToHex(this.sharedKey))
-      
-        const ciphertext = this.encryptData(this.devicePublicKey)
-      
-        s1SessionCmd1.setClientVerifyData(ciphertext)
+
+
+
+
+        //Create encrypter
+
+        const key = CryptoJS.enc.Hex.parse(this.bytesToHex(this.sharedKey));
+        const hexRandomBigInt = BigInt(`0x${this.bytesToHex(this.deviceRandom)}`);
+        const hexRandomPlusCounter = (hexRandomBigInt + BigInt(2)).toString(16);
+        //let iv = CryptoJS.enc.Hex.parse(this.bytesToHex(this.deviceRandom));
+        const iv = CryptoJS.enc.Hex.parse(hexRandomPlusCounter);
+
+        console.log("IV from device random: " + iv);
+        console.log("Shared key with PoP: " + this.bytesToHex( this.sharedKey));
+
+        this.encrypter = CryptoJS.algo.AES.createEncryptor(key, {
+            mode: CryptoJS.mode.CTR,
+            iv: iv,
+            padding: CryptoJS.pad.NoPadding
+        })
+
+        console.log("Encrypter created with shared key and device random")
+
+        this.decrypter = CryptoJS.algo.AES.createDecryptor(key, {
+            mode: CryptoJS.mode.CTR,
+            iv: iv,
+            padding: CryptoJS.pad.NoPadding
+        })
+
+/*         let test = this.encrypter.process("This is nothing but a silly test, i have no idea of what to write, so now im just writing some rubbish!")
+        let test2 = this.encrypter.finalize()
+        console.log("Encrypted: ", test);
+
+        let decryptedTest = this.decrypter.process(test).toString(CryptoJS.enc.Utf8);
+        let decrypterFinalize = this.decrypter.process(test2).toString(CryptoJS.enc.Utf8);
+        console.log(decryptedTest);
+        console.log("Finalize: ", decrypterFinalize) */
+
+        let chunk1 = CryptoJS.enc.Hex.parse( this.bytesToHex( this.devicePublicKey.slice(0,16)));
+        let chunk2 = CryptoJS.enc.Hex.parse( this.bytesToHex( this.devicePublicKey.slice(16)));
+        console.log("device publicKey: ", this.bytesToHex( this.devicePublicKey));
+        console.log("Device public key split into chunks: ", chunk1, chunk2);
+        console.log("device key length: ", this.devicePublicKey.length);
+        let encryptedChunk1 = this.encrypter.process(chunk1); 
+        let encryptedChunk2 = this.encrypter.process(chunk2);
+        let encryptedPublicKey = encryptedChunk1 + encryptedChunk2; 
+
+        console.log("encrypted 1: " + encryptedChunk1);
+        console.log("encrypted 2: " + encryptedChunk2);
+
+        console.log("Encrypted device public key in chunks : ", encryptedPublicKey);
+
+        //const ciphertext = this.encrypter.process(this.bytesToHex(this.devicePublicKey).toString(16))// this.encryptData(this.devicePublicKey)
+        //const finalizeing = this.encrypter.finalize()
+
+        console.log("Encrypted device public key: ", encryptedPublicKey.toString(CryptoJS.enc.Utf8));
+
+        s1SessionCmd1.setClientVerifyData(encryptedPublicKey.toString(CryptoJS.enc.Utf8))
+
+        console.log("SessionCmd1 payload set with encrypted device public key: ", s1SessionCmd1.getClientVerifyData())
       
         sec1Payload_2.setMsg(Sec1MsgType.SESSION_COMMAND1)
         sec1Payload_2.setSc1(s1SessionCmd1)
       
         sessionData_2.setSecVer(SecSchemeVersion.SECSCHEME1)
         sessionData_2.setSec1(sec1Payload_2)
+
+        console.log("session data: ", sessionData_2.toObject())
       
         const body_2 = sessionData_2.serializeBinary();
       
@@ -363,13 +427,13 @@ class Provisioner{
         // Encrypt the message using AES-CTR
         const ciphertext = CryptoJS.AES.encrypt(dataToEncrypt, key, {
             mode: CryptoJS.mode.CTR,
-            iv: iv,
+            iv: this.iv,
             //padding: CryptoJS.pad.Pkcs7
             padding: CryptoJS.pad.NoPadding
         });
 
-        this.aes_ctr_incrementer(dataToEncrypt.sigBytes)    //Ensure to increment the aes counter
-
+        //this.aes_ctr_incrementer(dataToEncrypt.sigBytes)    //Ensure to increment the aes counter
+        this.iv = ciphertext.CipherParams.iv;
         const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
         const encryptionInBytes = this.hexToBytes(encryptedHex)
         const cipherToBytes = new Uint8Array(encryptionInBytes)
@@ -444,6 +508,8 @@ class Provisioner{
         console.log("IV " + hexRandomBigInt.toString(16))
         console.log("IV plus: " + hexRandomPlusSix);
         console.log("HexKey: " + hexKey)
+
+        console.log("this.iv before : " + this.iv)
         
 
 
@@ -453,17 +519,19 @@ class Provisioner{
             key,
             {
                 mode: CryptoJS.mode.CTR,
-                iv: iv,
+                iv: this.iv,
                 //padding: CryptoJS.pad.AnsiX923
                 padding: CryptoJS.pad.NoPadding
             }
         );
 
+        console.log("this.iv after decrypt: " + this.iv);
+
         console.log("with clamp: " + decrypted.clamp());
         console.log("without clamp: " + decrypted);
 
-        this.aes_ctr_incrementer(decrypted.sigBytes);   //Increment the aes counter
-
+        //this.aes_ctr_incrementer(decrypted.sigBytes);  //Increment the aes counter
+        this.iv = decrypted.CipherParams.iv;
         const decryptedHex = decrypted.toString(CryptoJS.enc.Hex);
         const decryptedBytes = this.hexToBytes(decryptedHex);
 
