@@ -316,8 +316,8 @@ class Provisioner{
         const key = CryptoJS.enc.Hex.parse(this.bytesToHex(this.sharedKey));
         const hexRandomBigInt = BigInt(`0x${this.bytesToHex(this.deviceRandom)}`);
         const hexRandomPlusCounter = (hexRandomBigInt + BigInt(2)).toString(16);
-        //let iv = CryptoJS.enc.Hex.parse(this.bytesToHex(this.deviceRandom));
-        const iv = CryptoJS.enc.Hex.parse(hexRandomPlusCounter);
+        const iv = CryptoJS.enc.Hex.parse(this.bytesToHex(this.deviceRandom));
+        //const iv = CryptoJS.enc.Hex.parse(hexRandomPlusCounter);
 
         console.log("IV from device random: " + iv);
         console.log("Shared key with PoP: " + this.bytesToHex( this.sharedKey));
@@ -364,7 +364,7 @@ class Provisioner{
 
         console.log("Encrypted device public key: ", encryptedPublicKey.toString(CryptoJS.enc.Utf8));
 
-        s1SessionCmd1.setClientVerifyData(encryptedPublicKey.toString(CryptoJS.enc.Utf8))
+        s1SessionCmd1.setClientVerifyData(this.hexToBytes(encryptedPublicKey))
 
         console.log("SessionCmd1 payload set with encrypted device public key: ", s1SessionCmd1.getClientVerifyData())
       
