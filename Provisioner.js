@@ -1,7 +1,7 @@
 import { sharedKey, generateKeyPair, verify } from 'curve25519-js';
 import { bytesToBase64 } from './base64';
 import { SessionData, SecSchemeVersion,Sec1Payload, SessionCmd0, SessionResp0, Sec1MsgType, SessionCmd1  } from "./my_proto_pb";
-import { WiFiScanMsgType, WiFiScanPayload, CmdScanStart, CmdScanStatus, RespScanStart } from './wifi_pb'
+import { WiFiScanMsgType, WiFiScanPayload, CmdScanStart, CmdScanStatus, RespScanStart, CmdScanResult, RespScanResult } from './wifi_pb'
 import * as Crypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
 import { TextEncoder } from 'text-encoding';
@@ -29,6 +29,10 @@ class Provisioner{
         this.deviceVerify
         this.aes_ctr = 0
         this.iv;
+        this.stb = CryptoJS.lib.WordArray.create([
+            0x00000000, 0x00000000, 
+            0x00000000, 0x00000000, 
+          ])
         this.encrypter;
         this.decrypter;
     }
@@ -90,6 +94,8 @@ class Provisioner{
             console.log("Encrypted body2: " + encryptedBody)
             console.log("Encrypted body length: ", encryptedBody.length)
             console.log("Data encrypted.")
+
+            const bytestoSend = this.hexToBytes(encryptedBody)
             
             const contentLength = body.length
 
@@ -101,7 +107,7 @@ class Provisioner{
                     'Content-Type': 'application/octet-stream',
                     'Content-Length': "8"
                 },
-                body: encryptedBody
+                body: body
               });
             
             console.log("Request sendt...")
@@ -115,11 +121,20 @@ class Provisioner{
             const responseBuffer = await response.arrayBuffer();
 
             const responseBytes = new Uint8Array(responseBuffer)
+            const responseHex = this.bytesToHex(responseBytes)
+            console.log("response hex: " + responseHex)
             console.log("Response bytes: " + responseBytes)
 
-            const decryptedResponse = this.decryptData(responseBytes)
+/*             const decryptedResponse_1 = this.encrypter.process(responseHex)
+            const decryptedResponse_2 = this.enc.finalize()
+            const decryptedResponse = decryptedResponse_1 + decryptedResponse_2 */
+/* 
+            console.log("decrypted 1: ", decryptedResponse_1)
+            console.log("decrypted 2: ", decryptedResponse_2)
 
-            const respPayload = WiFiScanPayload.deserializeBinary(decryptedResponse);
+            console.log("Decrypted response: ", decryptedResponse) */
+
+            const respPayload = WiFiScanPayload.deserializeBinary(responseBytes);
 
             console.log("Response payload: ", respPayload.toObject());
 
@@ -135,9 +150,7 @@ class Provisioner{
             console.log("Building get status command...")
             wifiScanPayload.setMsg(WiFiScanMsgType.TYPECMDSCANSTATUS) 
 
-            //this.aes_ctr += 1;   //TODO quick fix - this needs to be dealt with properly. The error origin from the server and the aes_ctr not incrementing proberrly when executing this function
-
-            const encryptedBody2 = this.encryptData(wifiScanPayload.serializeBinary())
+            const encryptedBody2 = wifiScanPayload.serializeBinary() //this.encryptData(wifiScanPayload.serializeBinary())
 
             const response2 = await fetch('http://192.168.4.1/prov-scan', {
                 method: 'POST',
@@ -154,90 +167,55 @@ class Provisioner{
             }
             const responseBuffer2 = await response2.arrayBuffer();
             const responseBytes2 = new Uint8Array(responseBuffer2)
-            const decryptedResponse2 = this.decryptData(responseBytes2)
+            
             console.log("Response bytes 2: " + responseBytes2)
-            const respPayload2 = WiFiScanPayload.deserializeBinary(decryptedResponse2);
+            const respPayload2 = WiFiScanPayload.deserializeBinary(responseBytes2);
             console.log("Response payload 2: ", respPayload2.toObject());
 
+            const count = respPayload2.getRespScanStatus().getResultCount();
+            const scanFinished = respPayload2.getRespScanStatus().getScanFinished();
+            const status2 = respPayload2.getStatus();
+            if(status2 == 0){
+                if(scanFinished == 1){
+                    console.log(`Scan status request successful! Found ${count} networks.`);
+                    let networks = [];
+                    wifiScanPayload.setMsg(WiFiScanMsgType.TYPECMDSCANRESULT)
+                    const cmdScanResult = new CmdScanResult()
+                    cmdScanResult.setStartIndex(0)
+                    cmdScanResult.setCount(5)
+                    wifiScanPayload.setCmdScanResult(cmdScanResult)
+                    const encryptedBody3 = wifiScanPayload.serializeBinary()
 
+                    console.log("Sending request...")
 
+                    const response3 = await fetch('http://192.168.4.1/prov-scan', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/octet-stream',
+                            'Content-Length': encryptedBody3.length.toString()
+                        },
+                        body: encryptedBody3
+                      });
 
+                    console.log("Response received...")
+                    
+                    const responseScanResult = new RespScanResult()
+                    console.log("Deserializing response...")
+                    const data = await response3.arrayBuffer()
+                    const dataBytes = new Uint8Array(data);
+                    console.log("Response bytes: ", dataBytes);
+                    const result = WiFiScanPayload.deserializeBinary(dataBytes)
+                    console.log("Response scan result: ", result.toObject());
+                    const networks_1 = responseScanResult.setEntriesList(result.getRespScanResult().getEntriesList()) 
+                    console.log("Networks 1: ", networks_1)
 
-
-/* 
-            console.log("encryptedHex: " + encryptedHex);
-
-            const hex = this.bytesToHex(responseBytes);
-            console.log("Response Hex: " + hex);
-             */
-
-/*             try{
-                const respPayload = WiFiScanPayload.deserializeBinary(this.decryptData(responseBytes));
-                console.log("Response payload: ", respPayload.toObject());
-            }catch(err){
-                console.log("Error decrypting response: ", err);
-                throw err;
-            } */
-
-/*             const decodedResponse = this.decryptData(responseBytes);
-            console.log("Decoded TEST: " + this.bytesToHex(decodedResponse));
-            this.aes_ctr -= 1
-            const decodedResponse2 = this.decryptData(responseBytes);
-            console.log("Decoded TEST2: " +  this.bytesToHex(decodedResponse2));
-            this.aes_ctr += 1
-            const decodedResponse3 = this.decryptData(responseBytes);
-            console.log("Decoded TEST3: " +  this.bytesToHex(decodedResponse3));
-            this.aes_ctr += 1
-            const decodedResponse4 = this.decryptData(responseBytes);
-            console.log("Decoded TEST4: " +  this.bytesToHex(decodedResponse4));
-            this.aes_ctr += 1
-            const decodedResponse5 = this.decryptData(responseBytes);
-            console.log("Decoded TEST5: " +  this.bytesToHex(decodedResponse5));
-            this.aes_ctr += 1
-            const decodedResponse6 = this.decryptData(responseBytes);
-            console.log("Decoded TEST6 : " +  this.bytesToHex(decodedResponse6)); 
- */
-
-
-
-
-/*             for(let i = -10; i <= 20; i++) {
-
-                this.aes_ctr = i; 
-            
-                const decodedResponse = this.decryptData(responseBytes);
-            
-                console.log("AES counter: " + this.aes_ctr);
-                console.log("Decrypted Data: " + decodedResponse);
-                const hexme = this.bytesToHex(decodedResponse)
-                console.log("hex: " + hexme)
-                //console.log("hex: ", hexme)
-                console.log("**********************************************")
-            
-              } */
-
-
-
-
-  
-
-
-
-/*             this.aes_ctr += 2 //Increment counter for encryption
-
-            const decodedResponse = this.decryptData(responseBytes);
-            console.log("AES counter: " + this.aes_ctr);
-            console.log("DecryptedData: ", decodedResponse);
-            const decryptedHex = this.bytesToHex(decodedResponse)
-            console.log("Decrypted Hex: ", decryptedHex)
-
-            const resp = proto.WiFiScanPayload.deserializeBinary(decryptedHex);
-            console.log("Scan response deserialized: ", resp.toObject()); */
-
-
-    // await new Promise(resolve => setTimeout(resolve, 2000))
-
-
+                }
+                else{
+                    console.log("Scan not finished yet...")
+                }
+            } else {
+                throw new Error(`Could not get scan status! ESP Status: ${status2}`);
+            }
 
 
         } catch (error) {
@@ -364,6 +342,8 @@ class Provisioner{
         console.log("device publicKey: ", this.bytesToHex( this.devicePublicKey));
         console.log("Device public key split into chunks: ", chunk1, chunk2);
         console.log("device key length: ", this.devicePublicKey.length);
+        //const test = this.encryptData(this.devicePublicKey)
+        //console.log("TEST: ", test)
         let encryptedChunk1 = this.encrypter.process(chunk1); 
         let encryptedChunk2 = this.encrypter.process(chunk2);
         let encryptedPublicKey = encryptedChunk1 + encryptedChunk2; 
@@ -422,82 +402,25 @@ class Provisioner{
         return hexStr.padStart(32 * 2, '0'); 
     }
 
-    encryptData(data){
+    // new method 
+    encryptData(data) {
 
-        const hexSharedKey = this.bytesToHex(this.sharedKey).toString()
-        const randomToHex = this.bytesToHex(this.deviceRandom) //bytesToBase64(deviceRandom)
-        const dataHex = this.bytesToHex(data).toString(16)
-
-        const hexRandomBigInt = BigInt(`0x${randomToHex}`);
-        const hexRandomPlusCounter= (hexRandomBigInt + BigInt(this.aes_ctr)).toString(16);
-        //const paddedData = this.padTo32Bytes(dataHex);
-
-        const key = CryptoJS.enc.Hex.parse(hexSharedKey);
-        const iv = CryptoJS.enc.Hex.parse(hexRandomPlusCounter); 
-        const dataToEncrypt = CryptoJS.enc.Hex.parse(dataHex)
-
-        console.log("iv: " + hexRandomPlusCounter)
+        let counter = 0;
     
-        // Encrypt the message using AES-CTR
-        const ciphertext = CryptoJS.AES.encrypt(dataToEncrypt, key, {
-            mode: CryptoJS.mode.CTR,
-            iv: this.iv,
-            //padding: CryptoJS.pad.Pkcs7
-            padding: CryptoJS.pad.NoPadding
-        });
-
-        //this.aes_ctr_incrementer(dataToEncrypt.sigBytes)    //Ensure to increment the aes counter
-        this.iv = ciphertext.CipherParams.iv;
-        const encryptedHex = ciphertext.ciphertext.toString(CryptoJS.enc.Hex);
-        const encryptionInBytes = this.hexToBytes(encryptedHex)
-        const cipherToBytes = new Uint8Array(encryptionInBytes)
-        return cipherToBytes
-    }
-
-    decryptData(data){
-
-        // Your encryption key and IV (Initialization Vector)
-        const hexKey = this.bytesToHex(this.sharedKey)
-        const hexRandom = this.bytesToHex(this.deviceRandom)
-        // Add 6 by first converting to BigInt to avoid precision issues
-        const hexRandomBigInt = BigInt(`0x${hexRandom}`);
-        const hexRandomPlusSix = (hexRandomBigInt + BigInt(this.aes_ctr)).toString(16);
-
-        const key = CryptoJS.enc.Hex.parse(hexKey); // 128-bit key
-        const iv = CryptoJS.enc.Hex.parse(hexRandomPlusSix); // 128-bit IV
-
-        console.log("IV " + hexRandomBigInt.toString(16))
-        console.log("IV plus: " + hexRandomPlusSix);
-        console.log("HexKey: " + hexKey)
-
-        console.log("this.iv before : " + this.iv)
-        
-
-
-        // Decrypt the ciphertext
-        const decrypted = CryptoJS.AES.decrypt(
-            {ciphertext: CryptoJS.enc.Hex.parse(this.bytesToHex(data))},
-            key,
-            {
-                mode: CryptoJS.mode.CTR,
-                iv: this.iv,
-                //padding: CryptoJS.pad.AnsiX923
-                padding: CryptoJS.pad.NoPadding
-            }
-        );
-
-        console.log("this.iv after decrypt: " + this.iv);
-
-        console.log("with clamp: " + decrypted.clamp());
-        console.log("without clamp: " + decrypted);
-
-        //this.aes_ctr_incrementer(decrypted.sigBytes);  //Increment the aes counter
-        this.iv = decrypted.CipherParams.iv;
-        const decryptedHex = decrypted.toString(CryptoJS.enc.Hex);
-        const decryptedBytes = this.hexToBytes(decryptedHex);
-
-        return decryptedBytes;
-
+        const plaintext = CryptoJS.enc.Hex.parse(this.bytesToHex(data));
+        const ciphertext = CryptoJS.lib.WordArray.create();
+    
+        for(let i=0; i < plaintext.sigBytes; i+=16) {
+    
+        counter++;
+        const ctr = CryptoJS.lib.WordArray.create([counter]);
+        const keyStream = this.encrypter.process(ctr);
+    
+        ciphertext.concat(plaintext.clone().xor(keyStream)); 
+        }
+    
+        return ciphertext.toString(CryptoJS.enc.Hex);
+    
     }
 
     verifyDevice(){
