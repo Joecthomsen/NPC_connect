@@ -1,17 +1,10 @@
 import { sharedKey, generateKeyPair, verify } from 'curve25519-js';
 import { bytesToBase64 } from './base64';
-import { SessionData, SecSchemeVersion,Sec1Payload, SessionCmd0, SessionResp0, Sec1MsgType, SessionCmd1  } from "./my_proto_pb";
-import { WiFiScanMsgType, WiFiScanPayload, CmdScanStart, CmdScanStatus, RespScanStart, CmdScanResult, RespScanResult } from './wifi_pb'
+import { SessionData, SecSchemeVersion,Sec1Payload, SessionCmd0, Sec1MsgType, SessionCmd1  } from "./my_proto_pb";
+import { WiFiScanMsgType, WiFiScanPayload, CmdScanStart, CmdScanResult, RespScanResult } from './wifi_pb'
 import * as Crypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
 import { TextEncoder } from 'text-encoding';
-import bigInt from 'big-integer';
-
-import { 
-    pad as CryptoJSPad 
-  } from 'crypto-js';
-
-
 
 class Provisioner{
 
@@ -280,7 +273,6 @@ class Provisioner{
                         console.log("rssi: " + rssi);
                         console.log("authMode: " + name);
                     }
-
                 }
                 else{
                     console.log("Scan not finished yet... ")
@@ -288,12 +280,9 @@ class Provisioner{
             } else {
                 throw new Error(`Could not get scan status! ESP Status: ${status2}`);
             }
-
-
         } catch (error) {
             console.error("Error during wifi scan: " + error)
         }
-
     }
 
     async _sendSessionCmd0(){
@@ -371,9 +360,6 @@ class Provisioner{
         console.log("xoorKeyAndPop: " + this.sharedKey)
         const hexSharedKey = this.bytesToHex(this.sharedKey).toString()
         console.log("Shared key with PoP: " + this.bytesToHex(this.sharedKey))
-
-
-
 
         //Create encrypter
 

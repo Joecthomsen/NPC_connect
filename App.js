@@ -5,7 +5,6 @@ import WifiManager from 'react-native-wifi-reborn';
 import 'react-native-get-random-values';
 import Provisioner from './Provisioner';
 
-
 export default function App() {
 
   let provisioner// = new Provisioner()
@@ -31,14 +30,24 @@ export default function App() {
 
   const handleEspConnect = async () => {
 
+    try {    
+      console.log("Connecting to ESP AP..")
+      await WifiManager.connectToProtectedSSID("PROV_B54A4C", null)
+      //await WifiManager.connectToSSIDPrefix("PROV_")
+      console.log("Connected to ESP AP")
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   return (
     <View style={styles.container}>
       <Text>Hello, wordl MOFO!</Text>
       <Button color={"green"} title='Connect To ESP AP' onPress={handleEspConnect}/>
+      <Button title='Scan QR code' onPress={scanForWiFi} />
       <Button title='Establish Secure Session' onPress={handleSecureSession}></Button>
       <Button color={"red"} title='Scan for WiFi' onPress={scanForWiFi}></Button>
+      
       <Text>{counter}</Text>
       <StatusBar style="auto" />
     </View>
