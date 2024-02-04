@@ -182,7 +182,7 @@ class Provisioner{
                     wifiScanPayload.setMsg(WiFiScanMsgType.TYPECMDSCANRESULT)
                     const cmdScanResult = new CmdScanResult()
                     cmdScanResult.setStartIndex(0)
-                    cmdScanResult.setCount(5)
+                    cmdScanResult.setCount(count)
                     wifiScanPayload.setCmdScanResult(cmdScanResult)
                     const encryptedBody3 = wifiScanPayload.serializeBinary()
 
@@ -207,17 +207,78 @@ class Provisioner{
                     const result = WiFiScanPayload.deserializeBinary(dataBytes)
                     console.log("Response scan result: ", result.toObject());
                     const entries = result.getRespScanResult().getEntriesList()
+
+                    const textDecoder = new TextDecoder()
+                    
                     for(const entry of entries) {
 
                         const ssidBytes = entry.getSsid_asU8();
-                        const ssid = new TextDecoder().decode(ssidBytes);
+                        const ssid = textDecoder.decode(ssidBytes);
                         
                         const bssidBytes = entry.getBssid_asU8();
-                        const bssid = new TextDecoder().decode(bssidBytes);
+                        const bssid = this.bytesToHex(bssidBytes);
+
+                        const rssi = entry.getRssi();
+
+                        const authMode = entry.getAuth();
+                        let name;
+
+                        switch(authMode) {
+
+                            case 0:
+                              name = 'Open';
+                              break;
+                        
+                            case 1:
+                              name = 'WEP';
+                              break;  
+                        
+                            case 2:
+                              name = 'WPA PSK';
+                              break;
+                        
+                            case 3:
+                              name = 'WPA2 PSK';
+                              break;
+                        
+                            case 4:
+                              name = 'WPA/WPA2 PSK';
+                              break;
+                        
+                            case 5:
+                              name = 'WPA2 Enterprise';
+                              break;
+                        
+                            case 6:
+                              name = 'WPA3 Personal';
+                              break;
+                        
+                            case 7:
+                              name = 'WPA2/WPA3 Personal';
+                              break;
+                        
+                            case 8:
+                              name = 'WPA3 Enterprise';
+                              break;
+                        
+                            case 9:
+                              name = 'WPA2/WPA3 Enterprise';
+                              break;
+                        
+                            case 10:
+                              name = 'WAPI PSK';
+                              break;
+                        
+                            default:
+                              name = 'Unknown';
+                        
+                          }
                       
-                        console.log(ssid);
-                        console.log(bssid);
-                      
+                        console.log("\n\n");
+                        console.log("siid: " + ssid);
+                        console.log("bssid: " + bssid);
+                        console.log("rssi: " + rssi);
+                        console.log("authMode: " + name);
                     }
 
                 }
