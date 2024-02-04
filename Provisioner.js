@@ -206,12 +206,23 @@ class Provisioner{
                     console.log("Response bytes: ", dataBytes);
                     const result = WiFiScanPayload.deserializeBinary(dataBytes)
                     console.log("Response scan result: ", result.toObject());
-                    const networks_1 = responseScanResult.setEntriesList(result.getRespScanResult().getEntriesList()) 
-                    console.log("Networks 1: ", networks_1)
+                    const entries = result.getRespScanResult().getEntriesList()
+                    for(const entry of entries) {
+
+                        const ssidBytes = entry.getSsid_asU8();
+                        const ssid = new TextDecoder().decode(ssidBytes);
+                        
+                        const bssidBytes = entry.getBssid_asU8();
+                        const bssid = new TextDecoder().decode(bssidBytes);
+                      
+                        console.log(ssid);
+                        console.log(bssid);
+                      
+                    }
 
                 }
                 else{
-                    console.log("Scan not finished yet...")
+                    console.log("Scan not finished yet... ")
                 }
             } else {
                 throw new Error(`Could not get scan status! ESP Status: ${status2}`);
