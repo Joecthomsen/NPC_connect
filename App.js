@@ -7,6 +7,13 @@ import Provisioner from "./Provisioner";
 import React from "react";
 import { BarCodeScanner } from "expo-barcode-scanner";
 import SignIn from "./views/SignIn";
+import SignUp from "./views/SignUp";
+import Dashboard from "./views/Dashboard";
+
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   let provisioner; // = new Provisioner()
@@ -83,9 +90,29 @@ export default function App() {
   // };
 
   return (
-    <View style={styles.container}>
-      <SignIn />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: { backgroundColor: "#000522" },
+          headerTintColor: "#545454",
+        }}
+      >
+        <Stack.Screen
+          name="Sign In"
+          component={SignIn}
+          // options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Sign Up"
+          component={SignUp}
+          // options={{ headerShown: false }}
+        />
+        <Stack.Screen name="Dashboard" component={Dashboard} />
+      </Stack.Navigator>
+    </NavigationContainer>
+    // <View style={styles.container}>
+    //   <SignIn />
+    // </View>
   );
 }
 
