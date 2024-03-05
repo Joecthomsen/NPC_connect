@@ -17,8 +17,6 @@ import { AnimatedCircularProgress } from "react-native-circular-progress";
 import deviceStore from "../stores/deviceStore";
 import { observer } from "mobx-react-lite";
 import IconButton from "../components/IconButton";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useNavigation } from "@react-navigation/native";
 
 const Dashboard = observer(({ navigation }) => {
   const height = useHeaderHeight();
@@ -30,7 +28,7 @@ const Dashboard = observer(({ navigation }) => {
     />,
     <IconButton
       iconName={"qr-code-outline"}
-      onPress={() => navigation.navigate("Sign In")}
+      onPress={() => navigation.navigate("QrScanner")}
     />,
   ];
 
