@@ -5,11 +5,9 @@ import WifiManager from "react-native-wifi-reborn";
 import "react-native-get-random-values";
 import Provisioner from "./Provisioner";
 import React from "react";
-import { BarCodeScanner } from "expo-barcode-scanner";
 import SignIn from "./views/SignIn";
 import SignUp from "./views/SignUp";
 import Dashboard from "./views/Dashboard";
-
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -18,24 +16,6 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   let provisioner; // = new Provisioner()
   const [counter, setCounter] = useState("0");
-
-  const [hasPermission, setHasPermission] = useState(false);
-  const [scanData, setScanData] = useState();
-
-  useEffect(() => {
-    (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === "granted");
-    })();
-  }, []);
-
-  if (!hasPermission) {
-    return (
-      <View>
-        <Text>No permission to access camera</Text>
-      </View>
-    );
-  }
 
   const handleSecureSession = async () => {
     setCounter((counter) => {
@@ -56,11 +36,11 @@ export default function App() {
     }
   };
 
-  const handleBarCodeScanned = async ({ type, data }) => {
-    setScanData(data);
-    console.log("data: " + data);
-    console.log("type: " + type);
-  };
+  // const handleBarCodeScanned = async ({ type, data }) => {
+  //   setScanData(data);
+  //   console.log("data: " + data);
+  //   console.log("type: " + type);
+  // };
 
   // const qrCodeScanner = async () => {
   //   console.log("Scanning QR code...");
@@ -108,6 +88,7 @@ export default function App() {
           // options={{ headerShown: false }}
         />
         <Stack.Screen name="Dashboard" component={Dashboard} />
+        {/* <Stack.Screen name="QrScanner" component={QrScanner} /> */}
       </Stack.Navigator>
     </NavigationContainer>
     // <View style={styles.container}>

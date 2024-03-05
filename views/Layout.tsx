@@ -1,10 +1,11 @@
 import React, { ReactNode } from "react";
 import { View, StyleSheet, TouchableOpacity, Image, Dimensions } from "react-native";
+import IconButton from "../components/IconButton";
 
 
 interface LayoutProps {
     children: ReactNode;
-    buttons: ReactNode[];
+    buttons: ReactNode[] | typeof IconButton[];
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, buttons }) => {
