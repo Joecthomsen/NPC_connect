@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 
-const CustomButton = ({ onPress, title, color }) => {
+const CustomButton = ({ onPress, title, color, disabled }) => {
     return (
-      <TouchableOpacity onPress={onPress}>
+      <TouchableOpacity onPress={onPress} disabled={disabled !== undefined ? disabled : false}>
         <View style={[styles.button, { backgroundColor: color }]}>
           <Text style={styles.buttonText}>{title}</Text>
         </View>
