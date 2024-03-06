@@ -5,11 +5,12 @@ import { Ionicons } from '@expo/vector-icons'; // Import icon library
 interface IconButtonProps extends TouchableOpacityProps {
   iconName: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
+  disabled?: boolean;
 }
 
-const IconButton: React.FC<IconButtonProps> = ({ iconName, onPress, ...rest }) => {
+const IconButton: React.FC<IconButtonProps> = ({ iconName, onPress, disabled, ...rest }) => {
   return (
-    <TouchableOpacity onPress={onPress} {...rest}>
+    <TouchableOpacity onPress={onPress} {...rest} disabled={disabled === undefined ? false : true} >
       <Ionicons name={iconName} size={36} color="white" />
     </TouchableOpacity>
   );

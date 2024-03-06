@@ -9,7 +9,7 @@ import wifiStore from "../stores/wifiStore";
 
 const QrScanner = ({ navigation }) => {
   const [hasPermission, setHasPermission] = useState(null);
-  const [scanned, setScanned] = useState(true);
+  const [scanned, setScanned] = useState(false);
 
   let pop_id;
   let provisioner;
@@ -43,14 +43,17 @@ const QrScanner = ({ navigation }) => {
     setScanned(true);
     pop_id = JSON.parse(data).pop;
     console.log(pop_id);
-    alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+    //alert(`Bar code with type ${type} and data ${data} has been scanned!`);
   };
 
   const startCommissioning = async () => {
+    setScanned(false);
     console.log("Starting commissioning..");
     await handleSecureSession();
     const res = await scanForWiFi();
     console.log("Scan result : ", res);
+
+    wifiStore.emptyAccessPoints();
 
     res.forEach((ap) => {
       console.log("AP : ", ap);

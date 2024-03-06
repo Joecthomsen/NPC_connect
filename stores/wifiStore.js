@@ -7,6 +7,7 @@ class WifiStore {
       bssid: "",
       rssi: "",
       authMode: "",
+      channel: "",
     },
   ];
 
@@ -15,6 +16,7 @@ class WifiStore {
       accessPoints: observable,
       addAccessPoint: action,
       getAccessPoints: action,
+      emptyAccessPoints: action,
     });
   }
   addAccessPoint(accessPoint) {
@@ -23,6 +25,10 @@ class WifiStore {
 
   getAccessPoints() {
     return this.accessPoints;
+  }
+
+  emptyAccessPoints() {
+    this.accessPoints = [];
   }
 }
 

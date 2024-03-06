@@ -1,5 +1,5 @@
 import { sharedKey, generateKeyPair, verify } from "curve25519-js";
-import { bytesToBase64 } from "./base64";
+import { bytesToBase64, base64encode } from "./base64";
 import {
   SessionData,
   SecSchemeVersion,
@@ -14,6 +14,9 @@ import {
   CmdScanStart,
   CmdScanResult,
   RespScanResult,
+  WiFiConfigPayload,
+  CmdSetConfig,
+  WiFiConfigMsgType,
 } from "./wifi_pb";
 import * as Crypto from "expo-crypto";
 import CryptoJS from "crypto-js";
@@ -54,6 +57,73 @@ class Provisioner {
     } else {
       throw new Error("Device verification failed");
     }
+  }
+
+  async configureWiFi(ssid, bbsid, password, channel) {
+    console.log("Configuring WiFi...");
+    console.log("ssid: " + ssid);
+    console.log("password: " + password);
+    console.log("channel: " + channel);
+    console.log("bbsid: " + bbsid);
+
+    const encoder = new TextEncoder();
+
+    const ssidAsByteArray = encoder.encode(ssid);
+    console.log("ssidAsByteArray: " + ssidAsByteArray);
+    const passwordAsByteArray = encoder.encode(password);
+    console.log("passwordAsByteArray: " + passwordAsByteArray);
+
+    const wifiConfigPayload = new WiFiConfigPayload();
+    wifiConfigPayload.setMsg(WiFiConfigMsgType.TYPECMDSETCONFIG);
+
+    const cmdSetConfig = new CmdSetConfig();
+    console.log("1");
+    cmdSetConfig.setSsid(ssidAsByteArray);
+    cmdSetConfig.setPassphrase(passwordAsByteArray);
+
+    console.log("2 ");
+    wifiConfigPayload.setCmdSetConfig(cmdSetConfig);
+
+    const toObject = wifiConfigPayload.toObject();
+    console.log("toObject: ", toObject);
+
+    console.log("3");
+    const body = wifiConfigPayload.serializeBinary();
+    console.log("4");
+    const contentLength = body.length;
+    const response = await fetch("http://192.168.4.1/prov-config", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/protobuf",
+        "Content-Length": contentLength.toString(),
+      },
+      body: body,
+    });
+
+    const responseBuffer = await response.arrayBuffer();
+    const responseBytes = new Uint8Array(responseBuffer);
+    const respPayload =
+      proto.WiFiConfigPayload.deserializeBinary(responseBytes);
+
+    console.log("Response payload: ", respPayload.toObject());
+
+    return response; //Implement better status check / response
+  }
+
+  async applyWiFi() {
+    const wifiConfigPayload = new WiFiConfigPayload();
+    wifiConfigPayload.setMsg(WiFiConfigMsgType.TYPECMDAPPLYCONFIG);
+    const body = wifiConfigPayload.serializeBinary();
+    const contentLength = body.length;
+    const response = await fetch("http://192.168.4.1/prov-config", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/protobuf",
+        "Content-Length": contentLength.toString(),
+      },
+      body: body,
+    });
+    return response; //Implement better status check / response
   }
 
   async scanForWiFi() {
@@ -220,6 +290,7 @@ class Provisioner {
             const bssid = this.bytesToHex(bssidBytes);
 
             const rssi = entry.getRssi();
+            const channel = entry.getChannel();
 
             const authMode = entry.getAuth();
             let name;
@@ -273,16 +344,17 @@ class Provisioner {
                 name = "Unknown";
             }
 
-            // console.log("\n\n");
-            // console.log("siid: " + ssid);
-            // console.log("bssid: " + bssid);
-            // console.log("rssi: " + rssi);
-            // console.log("authMode: " + name);
+            console.log("\n\n");
+            console.log("siid: " + ssid);
+            console.log("bssid: " + bssid);
+            console.log("rssi: " + rssi);
+            console.log("authMode: " + name);
             networks.push({
               ssid: ssid,
               bssid: bssid,
               rssi: rssi,
               authMode: name,
+              channel: channel,
             });
           }
 
