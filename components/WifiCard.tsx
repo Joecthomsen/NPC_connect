@@ -41,14 +41,13 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
         setIsModalVisible(true);
       }
 
-      const handleProvision = async () => {
+      const handleProvision = async (pop_id: string) => {
         console.log("Provisioning WiFi with SSID: " + ssid);
-        const provisioner = new Provisioner();
+        const provisioner = new Provisioner(pop_id);
         await provisioner.configureWiFi(ssid, bbsid, password, channel );
         await provisioner.applyWiFi();
         setIsModalVisible(false);
       }
-
 
     return(
         <TouchableOpacity style={[styles.container, {width: windowWidth - 100}]} onPress={() => handlePress()}>
@@ -77,7 +76,7 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
                         />
                         <View style={styles.modalButtonContainer}>
                             <TextButton color="#147CDB" onPress={() => {setIsModalVisible(false), setPassword("")}} size={22} >Cancel</TextButton>
-                            <TextButton color="#147CDB" onPress={handleProvision} size={22} >Provision</TextButton>
+                            <TextButton color="#147CDB" onPress={() => handleProvision} size={22} >Provision</TextButton>
                             {/* <CustomButton onPress={() => setIsModalVisible(false)} title={"Cancel"} color={"#147CDB"} disabled={false}/>
                             <CustomButton onPress={handleProvision} title={"Provision"} color={"#147CDB"} disabled={false}/> */}
 

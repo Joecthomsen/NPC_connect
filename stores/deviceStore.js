@@ -1,6 +1,6 @@
 import { makeObservable, observable, action, set } from "mobx";
 
-class DeviceStore {
+class ControllerStore {
   state = 93; //State of all the devices used for the "spedometer" at Danshboard
 
   constructor() {
@@ -41,5 +41,5 @@ class DeviceStore {
     }
   }
 }
-const deviceStore = new DeviceStore();
-export default deviceStore;
+const controllerStore = new ControllerStore();
+export default controllerStore;

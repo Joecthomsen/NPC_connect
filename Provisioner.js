@@ -23,13 +23,13 @@ import CryptoJS from "crypto-js";
 import { TextEncoder } from "text-encoding";
 
 class Provisioner {
-  constructor() {
+  constructor(pop_id) {
     const random32byte = this.getRandomOfByteLength(32);
     const keyPair = generateKeyPair(random32byte);
 
     this.clientPrivateKey = keyPair.private;
     this.clientPublicKey = keyPair.public;
-    this.pop = "abcd1234";
+    this.pop = pop_id; //"abcd1234";
     this.devicePublicKey;
     this.deviceRandom;
     this.sharedKey;

@@ -7,11 +7,18 @@ import { useNavigation } from "@react-navigation/native";
 import userStore from "../stores/userStore";
 import { observer } from 'mobx-react-lite';
 
-const SignUp: React.FC = observer(() => {
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+interface Props {
+  navigation: NativeStackNavigationProp<any>;
+}
+
+
+const SignUp: React.FC<Props> = observer(({navigation}) => {
 
     const height = useHeaderHeight()
 
-    const navigation = useNavigation();
+    //const navigation = useNavigation();
     const [errorMessage, setErrorMessage] = useState({ email: "", firstName: "", lastName: "", password: "", confirmPassword: "" });
     const [isLoading, setIsLoading] = useState(false);
 
@@ -42,7 +49,7 @@ const SignUp: React.FC = observer(() => {
         if(validateForm()) {
             try {
                 setIsLoading(true)
-                const response = await fetch("http://65.108.92.248/auth/signUp", {
+                const response = await fetch("http://95.217.159.233/auth/signUp", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -65,7 +72,7 @@ const SignUp: React.FC = observer(() => {
                 setIsLoading(false)
                 const data = await response.json()
                 console.log(data) 
-                navigation.goBack()  
+                navigation.navigate("Dashboard")
             } catch (error) {
                 console.error(error)
             }

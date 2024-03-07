@@ -6,12 +6,14 @@ interface IconButtonProps extends TouchableOpacityProps {
   iconName: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   disabled?: boolean;
+  color?: string;
+  size?: number;
 }
 
-const IconButton: React.FC<IconButtonProps> = ({ iconName, onPress, disabled, ...rest }) => {
+const IconButton: React.FC<IconButtonProps> = ({ iconName, onPress, disabled, color, size, ...rest }) => {
   return (
     <TouchableOpacity onPress={onPress} {...rest} disabled={disabled === undefined ? false : true} >
-      <Ionicons name={iconName} size={36} color="white" />
+      <Ionicons name={iconName} size={size} color={color} />
     </TouchableOpacity>
   );
 };

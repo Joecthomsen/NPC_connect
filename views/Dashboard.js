@@ -14,9 +14,10 @@ import Layout from "./Layout";
 import React, { useEffect, useState } from "react";
 import CustomButton from "../components/CustomButton";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
-import deviceStore from "../stores/deviceStore";
+import controllerStore from "../stores/deviceStore";
 import { observer } from "mobx-react-lite";
 import IconButton from "../components/IconButton";
+import userStore from "../stores/userStore";
 
 const Dashboard = observer(({ navigation }) => {
   const height = useHeaderHeight();
@@ -44,6 +45,8 @@ const Dashboard = observer(({ navigation }) => {
     return `rgb(${red},${green},${blue})`;
   };
 
+  console.log("Controllers: ", userStore.controllers);
+
   return (
     <Layout buttons={buttons}>
       <KeyboardAvoidingView
@@ -52,6 +55,7 @@ const Dashboard = observer(({ navigation }) => {
       >
         <ScrollView>
           <View style={styles.container}>
+            <Text style={styles.greeting}>Welcome, {userStore.name}</Text>
             <CustomButton
               onPress={() => console.log("Click me baby one more time!")}
               title={"ADD DEVICE"}
@@ -65,7 +69,7 @@ const Dashboard = observer(({ navigation }) => {
             </View>
             <View style={{ marginBottom: 20 }} />
             <CustomButton
-              onPress={() => console.log("Click me baby one more time!")}
+              onPress={() => navigation.navigate("Diagnostics")}
               title={"DIAGNOSTICS"}
               color={"#B4D719"}
             />
@@ -79,8 +83,8 @@ const Dashboard = observer(({ navigation }) => {
             <AnimatedCircularProgress
               size={150}
               width={25}
-              fill={deviceStore.state}
-              tintColor={getColorForProgress(deviceStore.state)} //"#00e0ff"
+              fill={controllerStore.state}
+              tintColor={getColorForProgress(controllerStore.state)} //"#00e0ff"
               backgroundColor="#3d5875"
               arcSweepAngle={180}
               rotation={270}
@@ -89,11 +93,11 @@ const Dashboard = observer(({ navigation }) => {
                 <Text
                   style={{ color: "#00e0ff", fontSize: 12, fontWeight: "bold" }}
                 >
-                  {deviceStore.state}%
+                  {controllerStore.state}%
                 </Text>
               )}
             </AnimatedCircularProgress>
-            <Text style={styles.status_text}>{deviceStore.statusText}</Text>
+            <Text style={styles.status_text}>{controllerStore.statusText}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -110,6 +114,14 @@ const styles = StyleSheet.create({
     paddingTop: "15%",
     paddingBottom: "10%",
     paddingHorizontal: 20,
+  },
+  greeting: {
+    flex: 1,
+    fontSize: 20,
+    color: "#00e0ff",
+    paddingBottom: 10,
+    marginTop: -20,
+    marginBottom: 20,
   },
   text_field: {
     flex: 1,

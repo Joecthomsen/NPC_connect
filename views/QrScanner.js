@@ -10,8 +10,9 @@ import wifiStore from "../stores/wifiStore";
 const QrScanner = ({ navigation }) => {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
+  const [pop_id, setPop_id] = useState("");
 
-  let pop_id;
+  //let pop_id;
   let provisioner;
 
   useEffect(() => {
@@ -23,7 +24,7 @@ const QrScanner = ({ navigation }) => {
 
   const handleSecureSession = async () => {
     console.log("Establishing secure session..");
-    provisioner = new Provisioner();
+    provisioner = new Provisioner(pop_id);
     await provisioner.establishSecureSession();
     console.log("Secure session established!");
   };
@@ -41,12 +42,13 @@ const QrScanner = ({ navigation }) => {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
-    pop_id = JSON.parse(data).pop;
-    console.log(pop_id);
+    setPop_id(JSON.parse(data).pop);
+    //console.log(pop_id);
     //alert(`Bar code with type ${type} and data ${data} has been scanned!`);
   };
 
   const startCommissioning = async () => {
+    navigation.navigate("Wifi Scan Result");
     setScanned(false);
     console.log("Starting commissioning..");
     await handleSecureSession();
@@ -63,12 +65,18 @@ const QrScanner = ({ navigation }) => {
     console.log("Wifistore : ", wifiStore.getAccessPoints());
 
     console.log("Commissioning done!");
-    navigation.navigate("Wifi Scan Result");
   };
 
   const renderCamera = () => {
     return (
-      <View style={styles.cameraContainer}>
+      <View
+        style={[
+          styles.cameraContainer,
+          scanned
+            ? { borderColor: "white", borderWidth: 3 }
+            : { borderColor: "#B4D719" },
+        ]}
+      >
         <BarCodeScanner
           onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
           style={styles.camera}
@@ -98,7 +106,7 @@ const QrScanner = ({ navigation }) => {
       {renderCamera()}
       {scanned && (
         <View>
-          <Text style={styles.paragraph}></Text>
+          <Text style={styles.paragraph}>Controller with ID {pop_id}</Text>
           <CustomButton
             title={"Commission Device"}
             color={"#B4D719"}
@@ -130,14 +138,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 20,
-    color: "#484848",
+    color: "#737373",
     justifyContent: "center",
     alignItems: "center",
   },
   paragraph: {
     fontSize: 16,
-    marginBottom: 40,
-    color: "#484848",
+    marginBottom: 12,
+    color: "#999999",
   },
   cameraContainer: {
     width: "80%",
@@ -145,7 +153,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: 10,
     marginBottom: 40,
-    borderColor: "#B4D719",
+    //borderColor: "#B4D719",
     borderWidth: 1,
   },
   camera: {

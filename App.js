@@ -10,6 +10,7 @@ import SignUp from "./views/SignUp";
 import Dashboard from "./views/Dashboard";
 import QrScanner from "./views/QrScanner";
 import WifiScanResult from "./views/WifiScanResult";
+import Diagnostics from "./views/Diagnostics";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 // import { useCameraDevices, Camera } from "react-native-vision-camera";
@@ -43,6 +44,7 @@ export default function App() {
         <Stack.Screen name="Dashboard" component={Dashboard} />
         <Stack.Screen name="QrScanner" component={QrScanner} />
         <Stack.Screen name="Wifi Scan Result" component={WifiScanResult} />
+        <Stack.Screen name="Diagnostics" component={Diagnostics} />
       </Stack.Navigator>
     </NavigationContainer>
   );

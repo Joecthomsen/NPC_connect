@@ -11,6 +11,7 @@ class UserStore {
   signInEmail = "";
   signInPassword = "";
   name = "";
+  controllers = [];
 
   constructor() {
     makeObservable(this, {
@@ -30,6 +31,10 @@ class UserStore {
       setRefreshToken: action,
       name: observable,
       setName: action,
+      controllers: observable,
+      setControllers: action,
+      addController: action,
+      removeController: action,
     });
   }
 
@@ -55,7 +60,21 @@ class UserStore {
     this.refreshToken = refreshToken;
   }
   setName(name) {
+    // Split the full name into first name and last name
+    const [firstName, ...lastNameArray] = name.split(" ");
+    const lastName = lastNameArray.join(" "); // Re-join the remaining parts of the name as last name
+    this.setFirstName(firstName);
+    this.setLastName(lastName);
     this.name = name;
+  }
+  setControllers(controllers) {
+    this.controllers = controllers;
+  }
+  addController(controller) {
+    this.controllers.push(controller);
+  }
+  removeController(controller) {
+    this.controllers.splice(this.controllers.indexOf(controller), 1);
   }
 }
 

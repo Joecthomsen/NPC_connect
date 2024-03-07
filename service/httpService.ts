@@ -8,7 +8,7 @@ interface DecodedJwtPayload {
     email: string;
     name: string;
   }
-
+  
 
 export const signInService = async (email: string, password: string, navigation: NavigationProp<any>) => {
 
@@ -17,7 +17,8 @@ export const signInService = async (email: string, password: string, navigation:
     
 
   try {
-    const response = await fetch("http://65.108.92.248/auth/login", {
+    const url = "http://95.217.159.233";
+    const response = await fetch(url + "/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -34,16 +35,20 @@ export const signInService = async (email: string, password: string, navigation:
         navigation.navigate("Sign In");
     } 
     else {
-        console.log(response);
+
       const data = await response.json();
-      console.log(data);
-      const {accessToken, refreshToken} = data;
-      console.log(accessToken);
-      console.log(refreshToken);
-      const decodedAccessToken = jwtDecode<JwtPayload>(accessToken);
+      const {accessToken, refreshToken, controllers} = data;
+
+      const decodedAccessToken = jwtDecode<DecodedJwtPayload>(accessToken);
+
       console.log(decodedAccessToken);
+
+      userStore.setEmail(decodedAccessToken.email);
+      userStore.setName(decodedAccessToken.name);
       userStore.setAccessToken(accessToken);
       userStore.setRefreshToken(refreshToken);
+      userStore.setControllers(controllers);
+
      // userStore.setEmail(decodedAccessToken.email);
       navigation.navigate("Dashboard");
     }
