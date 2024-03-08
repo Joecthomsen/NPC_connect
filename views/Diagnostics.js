@@ -1,11 +1,25 @@
-import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  TouchableOpacity,
+} from "react-native";
 import React from "react";
 import Layout from "./Layout";
 import IconButton from "../components/IconButton";
 import userStore from "../stores/userStore";
+import controllerStore from "../stores/controllerStore";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { useState } from "react";
+import SelectorButton from "../components/SelectorButton";
+import { observer } from "mobx-react-lite";
 
-const Diagnostics = () => {
+const Diagnostics = observer(() => {
   const { width } = Dimensions.get("window");
+
+  const [selectedButton, setSelectedButton] = useState(0);
 
   const buttons = [
     <IconButton
@@ -20,20 +34,20 @@ const Diagnostics = () => {
 
   return (
     <Layout buttons={buttons}>
-      <Text>Diagnostics</Text>
+      {/* <Text>Diagnostics</Text> */}
       <View style={[styles.container, { width: width }]}>
         <ScrollView horizontal={true}>
-          {userStore.controllers.map((controller) => (
-            <View style={styles.controller_button_container}>
-              <IconButton
-                key={controller.popID}
+          {userStore.controllers.map((controller, index) => (
+            <View style={styles.controller_button_container} key={index}>
+              <SelectorButton
                 iconName={"hardware-chip-outline"}
                 color={"#9214bc"}
+                selectedColor={"#B4D719"}
+                selected={index === controllerStore.selectedController}
                 size={50}
+                text={controller.name}
+                onPress={() => controllerStore.setSelectedController(index)}
               />
-              <Text style={styles.controller_button_text}>
-                {controller.name}
-              </Text>
             </View>
           ))}
         </ScrollView>
@@ -41,7 +55,7 @@ const Diagnostics = () => {
       <Text>Diagnostics</Text>
     </Layout>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -52,13 +66,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     //width: 300,
     //height: 20,
-    marginTop: -200,
+    marginTop: -250,
   },
   controller_button_container: {
     flex: 1,
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
+    marginHorizontal: 35,
   },
   controller_button_text: {
     fontSize: 15,

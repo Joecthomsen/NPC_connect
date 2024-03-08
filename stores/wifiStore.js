@@ -10,6 +10,7 @@ class WifiStore {
       channel: "",
     },
   ];
+  popID = "";
 
   constructor() {
     makeObservable(this, {
@@ -17,6 +18,9 @@ class WifiStore {
       addAccessPoint: action,
       getAccessPoints: action,
       emptyAccessPoints: action,
+      popID: observable,
+      setPop_id: action,
+      getPop_id: action,
     });
   }
   addAccessPoint(accessPoint) {
@@ -29,6 +33,14 @@ class WifiStore {
 
   emptyAccessPoints() {
     this.accessPoints = [];
+  }
+
+  setPop_id(popID) {
+    this.popID = popID;
+  }
+
+  getPop_id() {
+    return this.popID;
   }
 }
 

@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons'; // Import icon library
 import Provisioner from '../Provisioner';
 import CustomButton from './CustomButton';
 import TextButton from './TextButton';
+import wifiStore from '../stores/wifiStore';
 
 interface WifiCardProps {
     ssid: string;
@@ -43,7 +44,7 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
 
       const handleProvision = async (pop_id: string) => {
         console.log("Provisioning WiFi with SSID: " + ssid);
-        const provisioner = new Provisioner(pop_id);
+        const provisioner = new Provisioner(wifiStore.getPop_id());
         await provisioner.configureWiFi(ssid, bbsid, password, channel );
         await provisioner.applyWiFi();
         setIsModalVisible(false);
@@ -76,7 +77,7 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
                         />
                         <View style={styles.modalButtonContainer}>
                             <TextButton color="#147CDB" onPress={() => {setIsModalVisible(false), setPassword("")}} size={22} >Cancel</TextButton>
-                            <TextButton color="#147CDB" onPress={() => handleProvision} size={22} >Provision</TextButton>
+                            <TextButton color="#147CDB" onPress={() => handleProvision("abcd1234")} size={22} >Provision</TextButton>
                             {/* <CustomButton onPress={() => setIsModalVisible(false)} title={"Cancel"} color={"#147CDB"} disabled={false}/>
                             <CustomButton onPress={handleProvision} title={"Provision"} color={"#147CDB"} disabled={false}/> */}
 

@@ -2,16 +2,23 @@ import { makeObservable, observable, action, set } from "mobx";
 
 class ControllerStore {
   state = 93; //State of all the devices used for the "spedometer" at Danshboard
+  selectedController = 0; //Selected controller at Diagnostics
 
   constructor() {
     makeObservable(this, {
       state: observable,
       setState: action,
+      selectedController: observable,
+      setSelectedController: action,
     });
   }
 
   setState(state) {
     this.state = state;
+  }
+
+  setSelectedController(controller) {
+    this.selectedController = controller;
   }
 
   get statusText() {

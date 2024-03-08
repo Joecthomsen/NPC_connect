@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 import { BarCodeScanner } from "expo-barcode-scanner";
-import { Camera } from "expo-camera";
+// import { Camera } from "expo-camera";
 import { useEffect, useState } from "react";
 import CustomButton from "../components/CustomButton";
 import Provisioner from "../Provisioner";
@@ -24,7 +24,8 @@ const QrScanner = ({ navigation }) => {
 
   const handleSecureSession = async () => {
     console.log("Establishing secure session..");
-    provisioner = new Provisioner(pop_id);
+    wifiStore.setPop_id("abcd1234");
+    provisioner = new Provisioner(wifiStore.getPop_id());
     await provisioner.establishSecureSession();
     console.log("Secure session established!");
   };
@@ -42,13 +43,15 @@ const QrScanner = ({ navigation }) => {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
-    setPop_id(JSON.parse(data).pop);
+    wifiStore.setPop_id(JSON.parse(data).pop);
+    //setPop_id(JSON.parse(data).pop);
+    //setPop_id("abcd1234");
     //console.log(pop_id);
     //alert(`Bar code with type ${type} and data ${data} has been scanned!`);
   };
 
   const startCommissioning = async () => {
-    navigation.navigate("Wifi Scan Result");
+    //setPop_id("abcd1234");
     setScanned(false);
     console.log("Starting commissioning..");
     await handleSecureSession();
@@ -63,7 +66,7 @@ const QrScanner = ({ navigation }) => {
     });
 
     console.log("Wifistore : ", wifiStore.getAccessPoints());
-
+    navigation.navigate("Wifi Scan Result");
     console.log("Commissioning done!");
   };
 

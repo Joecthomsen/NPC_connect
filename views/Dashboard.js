@@ -14,22 +14,28 @@ import Layout from "./Layout";
 import React, { useEffect, useState } from "react";
 import CustomButton from "../components/CustomButton";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
-import controllerStore from "../stores/deviceStore";
+import controllerStore from "../stores/controllerStore";
 import { observer } from "mobx-react-lite";
 import IconButton from "../components/IconButton";
 import userStore from "../stores/userStore";
+import io from "socket.io-client";
 
 const Dashboard = observer(({ navigation }) => {
+  const socket_url = "NPC_Connect.local:3333";
   const height = useHeaderHeight();
 
   const buttons = [
     <IconButton
       iconName={"person-outline"}
       onPress={() => console.log("Click me baby one more time!")}
+      color="white"
+      size={36}
     />,
     <IconButton
       iconName={"qr-code-outline"}
       onPress={() => navigation.navigate("QrScanner")}
+      color="white"
+      size={36}
     />,
   ];
 
