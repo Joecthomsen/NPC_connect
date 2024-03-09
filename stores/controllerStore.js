@@ -3,6 +3,7 @@ import { makeObservable, observable, action, set } from "mobx";
 class ControllerStore {
   state = 93; //State of all the devices used for the "spedometer" at Danshboard
   selectedController = 0; //Selected controller at Diagnostics
+  addControllerName = ""; //Name of the controller to be added
 
   constructor() {
     makeObservable(this, {
@@ -10,6 +11,10 @@ class ControllerStore {
       setState: action,
       selectedController: observable,
       setSelectedController: action,
+
+      addControllerName: observable,
+      setAddControllerName: action,
+      getNewControllerName: action,
     });
   }
 
@@ -19,6 +24,13 @@ class ControllerStore {
 
   setSelectedController(controller) {
     this.selectedController = controller;
+  }
+
+  setAddControllerName(name) {
+    this.addControllerName = name;
+  }
+  getNewControllerName() {
+    return this.addControllerName;
   }
 
   get statusText() {

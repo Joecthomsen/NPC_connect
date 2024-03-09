@@ -70,6 +70,7 @@ const SignUp: React.FC<Props> = observer(({navigation}) => {
                     throw new Error("Something went wrong")
                 }
                 setIsLoading(false)
+                userStore.setName(userStore.firstName + " " + userStore.lastName)   
                 const data = await response.json()
                 console.log(data) 
                 navigation.navigate("Dashboard")

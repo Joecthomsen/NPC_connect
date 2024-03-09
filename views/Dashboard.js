@@ -8,7 +8,9 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   StatusBar,
+  Alert,
 } from "react-native";
+
 import { useHeaderHeight } from "@react-navigation/elements";
 import Layout from "./Layout";
 import React, { useEffect, useState } from "react";
@@ -18,10 +20,36 @@ import controllerStore from "../stores/controllerStore";
 import { observer } from "mobx-react-lite";
 import IconButton from "../components/IconButton";
 import userStore from "../stores/userStore";
-import io from "socket.io-client";
+//import io from "socket.io-client";
+import TcpSocket from "react-native-tcp-socket";
 
 const Dashboard = observer(({ navigation }) => {
+  //var net = require("react-native-tcp");
+
   const socket_url = "NPC_Connect.local:3333";
+
+  const options = {
+    port: 3333,
+    host: "NPC_Connect.local",
+    //localAddress: "NPC_Connect.local",
+    reuseAddress: true,
+    // localPort: 20000,
+    // interface: "wifi",
+  };
+
+  const client = TcpSocket.createConnection(options, () => {
+    // Write on the socket
+    client.write("Hello server!");
+  });
+
+  client.on("error", (err) => {
+    console.error("Error:", err);
+  });
+
+  client.on("close", () => {
+    console.log("Connection closed");
+  });
+
   const height = useHeaderHeight();
 
   const buttons = [
@@ -33,11 +61,21 @@ const Dashboard = observer(({ navigation }) => {
     />,
     <IconButton
       iconName={"qr-code-outline"}
-      onPress={() => navigation.navigate("QrScanner")}
+      onPress={() => handleQRCodePress()}
       color="white"
       size={36}
     />,
   ];
+
+  const handleQRCodePress = () => {
+    // Prompt the user to enter controller name
+    Alert.prompt("Enter Controller Name", "", (text) => {
+      if (text) {
+        controllerStore.setAddControllerName(text); // Set the controller name in state
+        navigation.navigate("QrScanner"); // Navigate to QR scanner with controller name
+      }
+    });
+  };
 
   // Function to map value to a color within the gradient
   const getColorForProgress = (value) => {

@@ -34,9 +34,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "react-native-vision-camera"
-    ],
     "extra": {
       "eas": {
         "projectId": "2c2a86f7-f754-453f-980d-6c0a965883fb"

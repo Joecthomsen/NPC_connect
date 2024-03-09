@@ -8,6 +8,9 @@ import Provisioner from '../Provisioner';
 import CustomButton from './CustomButton';
 import TextButton from './TextButton';
 import wifiStore from '../stores/wifiStore';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { addControllerService } from '../service/httpService';
+import controllerStore from '../stores/controllerStore';
 
 interface WifiCardProps {
     ssid: string;
@@ -16,10 +19,11 @@ interface WifiCardProps {
     signal: string;
     security: string;
     //onPress: () => void;
+    navigation?: NativeStackNavigationProp<any>;
 }
 
 
-const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, bbsid, channel }) => {
+const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, bbsid, channel, navigation }) => {
 
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -47,6 +51,15 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
         const provisioner = new Provisioner(wifiStore.getPop_id());
         await provisioner.configureWiFi(ssid, bbsid, password, channel );
         await provisioner.applyWiFi();
+
+        // TODO: What to do after provissioning. 
+
+
+        await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());
+
+        if(navigation) {
+            navigation.navigate("Dashboard");
+        }
         setIsModalVisible(false);
       }
 

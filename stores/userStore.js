@@ -27,8 +27,10 @@ class UserStore {
       setConfirmPassword: action,
       accessToken: observable,
       setAccessToken: action,
+      getAccessToken: action,
       refreshToken: observable,
       setRefreshToken: action,
+      getRefreshToken: action,
       name: observable,
       setName: action,
       controllers: observable,
@@ -56,8 +58,14 @@ class UserStore {
   setAccessToken(accessToken) {
     this.accessToken = accessToken;
   }
+  getAccessToken() {
+    return this.accessToken;
+  }
   setRefreshToken(refreshToken) {
     this.refreshToken = refreshToken;
+  }
+  getRefreshToken() {
+    return this.refreshToken;
   }
   setName(name) {
     // Split the full name into first name and last name
