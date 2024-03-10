@@ -1,13 +1,14 @@
 import React from "react";
-import { View, ScrollView, Text, StyleSheet, TextInput, Button, KeyboardAvoidingView, ActivityIndicator } from "react-native";
+import { View, ScrollView, Text, StyleSheet, TextInput, Button, KeyboardAvoidingView, ActivityIndicator, Alert } from "react-native";
 import Layout from "./Layout";
 import { useState } from "react";
 import { useHeaderHeight } from '@react-navigation/elements'
 import { useNavigation } from "@react-navigation/native";
 import userStore from "../stores/userStore";
 import { observer } from 'mobx-react-lite';
-
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { signUpService } from "../service/httpService";
+import loadingStore from "../stores/loadingStore";
 
 interface Props {
   navigation: NativeStackNavigationProp<any>;
@@ -45,43 +46,86 @@ const SignUp: React.FC<Props> = observer(({navigation}) => {
         return Object.values(error).every(message => message === "");
     }
 
-    const handle_submit = async () => {
+    const signUp = async () => {
         if(validateForm()) {
             try {
-                setIsLoading(true)
-                const response = await fetch("http://95.217.159.233/auth/signUp", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        firstName: userStore.firstName,
-                        lastName: userStore.lastName,
-                        email: userStore.email,
-                        password: userStore.password,
-                    })
-                })
-
-                userStore.setPassword("")
-                userStore.setConfirmPassword("")
-                
-                if(response.status !== 201) 
-                {
-                    throw new Error("Something went wrong")
+                loadingStore.setLoading(true)
+                const response = await signUpService(userStore.firstName, userStore.lastName, userStore.email, userStore.password);
+                if(response.statusCode === 201) {
+                    navigation.navigate("Dashboard");
                 }
-                setIsLoading(false)
-                userStore.setName(userStore.firstName + " " + userStore.lastName)   
-                const data = await response.json()
-                console.log(data) 
-                navigation.navigate("Dashboard")
-            } catch (error) {
-                console.error(error)
+                else if(response.statusCode === 400) {
+                    Alert.alert("Error, all fields are required")
+                    userStore.setEmail("")
+                    userStore.setPassword("")
+                    userStore.setConfirmPassword("")
+                    userStore.setFirstName("")
+                    userStore.setLastName("")
+                }
+                else if(response.statusCode === 409) {
+                    Alert.alert("Error, user already exists")
+                    userStore.setEmail("")
+                    userStore.setPassword("")
+                    userStore.setConfirmPassword("")
+                    userStore.setFirstName("")
+                    userStore.setLastName("")
+                }
+                else if(response.statusCode === 500) {
+                    Alert.alert("Error, internal server error, please try again later")
+                    userStore.setEmail("")
+                    userStore.setPassword("")
+                    userStore.setConfirmPassword("")
+                    userStore.setFirstName("")
+                    userStore.setLastName("")
+                }
+                else {
+                    Alert.alert("Error, unknown error: ", response.message)
+                }
+                loadingStore.setLoading(false)
+
+            }catch(error) {
+                console.log(error)
             }
-        }
-        else {
-            console.log("Form is not valid")
-        }
+     }
     }
+
+    // const handle_submit = async () => {
+    //     if(validateForm()) {
+    //         try {
+    //             setIsLoading(true)
+    //             const response = await fetch("http://95.217.159.233/auth/signUp", {
+    //                 method: "POST",
+    //                 headers: {
+    //                     "Content-Type": "application/json"
+    //                 },
+    //                 body: JSON.stringify({
+    //                     firstName: userStore.firstName,
+    //                     lastName: userStore.lastName,
+    //                     email: userStore.email,
+    //                     password: userStore.password,
+    //                 })
+    //             })
+
+    //             userStore.setPassword("")
+    //             userStore.setConfirmPassword("")
+                
+    //             if(response.status !== 201) 
+    //             {
+    //                 throw new Error("Something went wrong")
+    //             }
+    //             setIsLoading(false)
+    //             userStore.setName(userStore.firstName + " " + userStore.lastName)   
+    //             const data = await response.json()
+    //             console.log(data) 
+    //             navigation.navigate("Dashboard")
+    //         } catch (error) {
+    //             console.error(error)
+    //         }
+    //     }
+    //     else {
+    //         console.log("Form is not valid")
+    //     }
+    // }
 
 
     const buttons = [
@@ -114,7 +158,7 @@ const SignUp: React.FC<Props> = observer(({navigation}) => {
                         <TextInput style={styles.form_element} placeholder="Password" secureTextEntry={true} value={userStore.password} onChangeText={(text) => userStore.setPassword(text)}/>
                         {errorMessage.confirmPassword ? <Text style={styles.error_message}>{errorMessage.confirmPassword}</Text> : null}
                         <TextInput style={styles.form_element} placeholder="Repeat Password" secureTextEntry={true} value={userStore.confirmPassword} onChangeText={(text) => userStore.setConfirmPassword(text)}/>
-                        <Button title="Sign Up!" onPress={() => handle_submit()} />
+                        <Button title="Sign Up!" onPress={() => signUp()} />
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   ScrollView,
+  Alert,
 } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import Layout from "./Layout";
@@ -34,7 +35,21 @@ export default SignIn = observer(({ navigation }) => {
 
   const signIn = async () => {
     loadingStore.setLoading(true);
-    await signInService(userStore.email, userStore.password, navigation);
+    const response = await signInService(
+      userStore.email,
+      userStore.password,
+      navigation
+    );
+
+    console.log("Response: ", response);
+
+    if (response.statusCode === 401) {
+      Alert.alert("Invalid credentials", "Please try again");
+    } else if (response.statusCode === 500) {
+      Alert.alert("Server error", "Wait a minut and try again");
+    } else if (response.statusCode === 200) {
+      navigation.navigate("Dashboard");
+    }
     loadingStore.setLoading(false);
   };
 

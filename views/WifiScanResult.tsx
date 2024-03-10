@@ -4,8 +4,13 @@ import Layout from './Layout';
 import wifiStore from '../stores/wifiStore';
 import WifiCard from '../components/WifiCard';
 import { observer } from "mobx-react-lite";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-const WifiScanResult = observer(() => {
+interface Props {
+    navigation?: NativeStackNavigationProp<any>;
+}
+
+const WifiScanResult = observer(({navigation}: Props) => {
 
     useEffect(() => {
         wifiStore.getAccessPoints();
@@ -28,7 +33,7 @@ const WifiScanResult = observer(() => {
                     }
                     {wifiStore.getAccessPoints().length > 0 ? 
                         wifiStore.getAccessPoints().map((ap, index) => (
-                            <WifiCard key={ap.ssid} ssid={ap.ssid} signal={ap.rssi} security={ap.authMode} bbsid={ap.bssid} channel={ap.channel} />
+                            <WifiCard key={ap.ssid} ssid={ap.ssid} signal={ap.rssi} security={ap.authMode} bbsid={ap.bssid} channel={ap.channel} navigation={navigation} />
                         )) : 
                         <Text style={styles.text}>No Wifi Access Points found</Text>
                     }

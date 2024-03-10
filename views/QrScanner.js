@@ -117,14 +117,6 @@ const QrScanner = ({ navigation }) => {
           />
         </View>
       )}
-      {/* <TouchableOpacity
-        style={styles.button}
-        onPress={() => console.log("Click me QR one more time!")}
-        // onPress={() => setScanned(false)}
-        //disabled={scanned}
-      >
-        <Text style={styles.buttonText}>Scan QR to Start your job</Text>
-      </TouchableOpacity> */}
     </View>
   );
 };

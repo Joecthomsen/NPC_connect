@@ -16,10 +16,15 @@ interface addControllerServiceProps {
     popID: string;
 }
 
+interface Response {
+  statusCode: number;
+  message: string;
+}
+
 const URL = "http://95.217.159.233";
   
 
-export const signInService = async (email: string, password: string, navigation: NavigationProp<any>) => {
+export const signInService = async (email: string, password: string): Promise<Response> => {
 
     console.log("email: ", email);
     console.log("password: ", password);
@@ -41,7 +46,8 @@ export const signInService = async (email: string, password: string, navigation:
     if (response.status !== 200) {
         const data = await response.json();
         console.log(data);
-        navigation.navigate("Sign In");
+        return { statusCode: response.status, message: data.message };
+        //navigation.navigate("Sign In");
     } 
     else {
 
@@ -58,14 +64,64 @@ export const signInService = async (email: string, password: string, navigation:
       userStore.setRefreshToken(refreshToken);
       userStore.setControllers(controllers);
 
-     // userStore.setEmail(decodedAccessToken.email);
-      navigation.navigate("Dashboard");
+      return { statusCode: response.status, message: "Sign in successful" };
     }
   } catch (error) {
     console.error(error);
-    navigation.navigate("Sign In");
+    return { statusCode: 500, message: error.message };
+    //navigation.navigate("Sign In");
   }
 };
+
+
+export const signUpService = async (firstName: string, lastName: string, email: string, password: string): Promise<Response> => {
+
+      try {
+        const response = await fetch("http://95.217.159.233/auth/signUp", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                password: password,
+            })
+        })
+
+          userStore.setPassword("")
+          userStore.setConfirmPassword("")
+          
+          if(response.status === 409) 
+          {
+            return { statusCode: response.status, message: "User already exists" };
+              //throw new Error("Something went wrong")
+          }
+          else if(response.status === 400){
+            return { statusCode: response.status, message: "All parameters must be filled" };
+          }
+          else if(response.status === 500){
+            return { statusCode: response.status, message: "Internal server error" };
+          }
+          else if(response.status === 201){
+            userStore.setName(userStore.firstName + " " + userStore.lastName) 
+            const data = await response.json()
+            userStore.setAccessToken(data.accessToken) 
+            userStore.setRefreshToken(data.refreshToken)
+            return { statusCode: response.status, message: "Sign up successful" };
+          }
+          else {
+            return { statusCode: response.status, message: "Something went wrong" };
+          }
+      } catch (error) {
+          return { statusCode: 500, message: error.message };
+          console.error(error)
+      }
+  
+}
+
+
 
 export const addControllerService = async (popID: string, name: string ) => {
   try {

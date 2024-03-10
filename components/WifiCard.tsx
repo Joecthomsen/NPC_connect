@@ -11,6 +11,7 @@ import wifiStore from '../stores/wifiStore';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { addControllerService } from '../service/httpService';
 import controllerStore from '../stores/controllerStore';
+import loadingStore from '../stores/loadingStore';
 
 interface WifiCardProps {
     ssid: string;
@@ -47,6 +48,9 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
       }
 
       const handleProvision = async (pop_id: string) => {
+
+        loadingStore.setLoading(true);
+
         console.log("Provisioning WiFi with SSID: " + ssid);
         const provisioner = new Provisioner(wifiStore.getPop_id());
         await provisioner.configureWiFi(ssid, bbsid, password, channel );
@@ -60,6 +64,9 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
             navigation.navigate("Dashboard");
         }
         setIsModalVisible(false);
+
+        loadingStore.setLoading(false);
+
       }
 
     return(
