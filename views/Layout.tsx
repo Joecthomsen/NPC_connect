@@ -1,6 +1,8 @@
 import React, { ReactNode } from "react";
-import { View, StyleSheet, TouchableOpacity, Image, Dimensions } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Image, Dimensions, ActivityIndicator } from "react-native";
 import IconButton from "../components/IconButton";
+import loadingStore from "../stores/loadingStore";
+import { observer } from "mobx-react-lite";
 
 
 interface LayoutProps {
@@ -8,7 +10,7 @@ interface LayoutProps {
     buttons: ReactNode[] | typeof IconButton[];
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, buttons }) => {
+const Layout: React.FC<LayoutProps> = observer(({ children, buttons }) => {
     return (
         <View style={styles.container}>
             <View style={styles.logoContainer}>
@@ -23,9 +25,19 @@ const Layout: React.FC<LayoutProps> = ({ children, buttons }) => {
                     ))
                 }
             </View>
+            {loadingStore.loading && (
+                <View style={styles.overlay}>
+                        <ActivityIndicator
+                            size={"large"}
+                            //color="#B4D719"
+                            color={"white"}
+                            style={{ transform: [{ scaleX: 3 }, { scaleY: 3 }] }}
+                        />
+                </View>
+            )}
         </View>
     );
-};
+});
 
 const { height } = Dimensions.get("window");
 const LOGO_CONTAINER_SIZE = height * 0.12; // Calculate logo size based on screen height
@@ -81,7 +93,13 @@ const styles = StyleSheet.create({
         justifyContent: "space-around",
         alignItems: "center",
         padding: 10,
-    }
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
 });
 
 export default Layout;

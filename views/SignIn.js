@@ -12,8 +12,8 @@ import { useHeaderHeight } from "@react-navigation/elements";
 import Layout from "./Layout";
 import userStore from "../stores/userStore";
 import { observer } from "mobx-react-lite";
-
 import { signInService } from "../service/httpService";
+import loadingStore from "../stores/loadingStore";
 
 export default SignIn = observer(({ navigation }) => {
   const height = useHeaderHeight();
@@ -33,7 +33,9 @@ export default SignIn = observer(({ navigation }) => {
   ];
 
   const signIn = async () => {
+    loadingStore.setLoading(true);
     await signInService(userStore.email, userStore.password, navigation);
+    loadingStore.setLoading(false);
   };
 
   return (
