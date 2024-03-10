@@ -51,14 +51,14 @@ const QrScanner = ({ navigation }) => {
   };
 
   const startCommissioning = async () => {
-    //setPop_id("abcd1234");
+    wifiStore.emptyAccessPoints();
+    wifiStore.setLoading(true);
+    navigation.navigate("Wifi Scan Result");
     setScanned(false);
     console.log("Starting commissioning..");
     await handleSecureSession();
     const res = await scanForWiFi();
     console.log("Scan result : ", res);
-
-    wifiStore.emptyAccessPoints();
 
     res.forEach((ap) => {
       console.log("AP : ", ap);
@@ -66,7 +66,7 @@ const QrScanner = ({ navigation }) => {
     });
 
     console.log("Wifistore : ", wifiStore.getAccessPoints());
-    navigation.navigate("Wifi Scan Result");
+    wifiStore.setLoading(false);
     console.log("Commissioning done!");
   };
 

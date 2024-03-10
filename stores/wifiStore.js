@@ -1,16 +1,9 @@
 import { makeObservable, observable, action } from "mobx";
 
 class WifiStore {
-  accessPoints = [
-    {
-      ssid: "",
-      bssid: "",
-      rssi: "",
-      authMode: "",
-      channel: "",
-    },
-  ];
+  accessPoints = [];
   popID = "";
+  loading = false;
 
   constructor() {
     makeObservable(this, {
@@ -21,6 +14,9 @@ class WifiStore {
       popID: observable,
       setPop_id: action,
       getPop_id: action,
+      loading: observable,
+      setLoading: action,
+      getLoading: action,
     });
   }
   addAccessPoint(accessPoint) {
@@ -41,6 +37,12 @@ class WifiStore {
 
   getPop_id() {
     return this.popID;
+  }
+  setLoading(loading) {
+    this.loading = loading;
+  }
+  getLoading() {
+    return this.loading;
   }
 }
 

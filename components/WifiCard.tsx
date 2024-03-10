@@ -54,8 +54,7 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
 
         // TODO: What to do after provissioning. 
 
-
-        await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());
+        await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());  //Add the controller to the database
 
         if(navigation) {
             navigation.navigate("Dashboard");
