@@ -56,6 +56,16 @@
     </dict>
     <key>NSCameraUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your camera</string>
+
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>App_Name requires users location for better user experience.</string>
+
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>App_Name requires users location for better user experience.</string>
+
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>App_Name requires users location for better user experience.</string>
+
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>UILaunchStoryboardName</key>
@@ -85,6 +95,4 @@
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
   </dict>
-  <key>com.apple.developer.networking.wifi-info</key>
-  <true/>
 </plist>

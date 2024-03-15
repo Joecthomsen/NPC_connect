@@ -17,7 +17,10 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera"
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+        "NSLocationWhenInUseUsageDescription": "This app requires access to your location when open.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app requires access to your location even when closed.",
+        "NSLocationAlwaysUsageDescription":  "This app requires access to your location when open."
       },
       "bundleIdentifier": "host.exp.NPC"
     },
@@ -46,6 +49,16 @@
       "react-native-vision-camera",
       {
         "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera."
+      }
+    ],
+    [
+      "expo-location",
+      {
+        "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+        "locationAlwaysPermission": "Allow $(PRODUCT_NAME) to use your location.",
+        "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+        "isIosBackgroundLocationEnabled": true,
+        "isAndroidBackgroundLocationEnabled": true
       }
     ]
   ]

@@ -31,7 +31,7 @@ import wifiStore from "../stores/wifiStore";
 //import io from "socket.io-client";
 //import TcpSocket from "react-native-tcp-socket";
 import WifiManager from "react-native-wifi-reborn";
-//import { connectToSocketsOnNetwork } from "../service/socketHandler";
+import * as Location from "expo-location";
 
 const Dashboard = observer(({ navigation }) => {
   //var net = require("react-native-tcp");
@@ -51,6 +51,18 @@ const Dashboard = observer(({ navigation }) => {
   //     console.log(error);
   //   }
   // }, []);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission to access location was denied");
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({});
+      console.log("Location permission granted", location);
+    })();
+  }, []);
 
   const testWifi = async () => {
     try {
