@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, View, StyleSheet, Text, Modal, Button, TextInput } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, Text, Modal, Button, TextInput, Alert } from 'react-native';
 import { Dimensions } from 'react-native';
 import IconButton from './IconButton';
 import { observer } from "mobx-react-lite";
@@ -12,6 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { addControllerService } from '../service/httpService';
 import controllerStore from '../stores/controllerStore';
 import loadingStore from '../stores/loadingStore';
+import { connectToSocketOnNetwork } from '../service/socketHandler';
 
 interface WifiCardProps {
     ssid: string;
@@ -58,11 +59,28 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
 
         // TODO: What to do after provissioning. 
 
-        await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());  //Add the controller to the database
-
-        if(navigation) {
-            navigation.navigate("Dashboard");
+        const reponse = await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());  //Add the controller to the database
+        
+        if(reponse.statusCode === 201) {
+            console.log("Controller added to database");
+            
+            navigation?.navigate("Diagnostics")
         }
+        else {
+            Alert.alert("Error", "Could not add controller. Please try again later.");
+            navigation?.navigate("Dashboard");
+        }
+        
+        // while(!connectToSocketOnNetwork(wifiStore.getPop_id())) {
+        //     console.log("Waiting for socket connection to be established");
+        //     await new Promise(r => setTimeout(r, 1000));
+        // }
+        // console.log("Socket connection established");
+
+        // if(navigation) {
+        //     navigation.navigate("Dashboard");
+        // }
+        
         setIsModalVisible(false);
 
         loadingStore.setLoading(false);
@@ -96,7 +114,7 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
                         />
                         <View style={styles.modalButtonContainer}>
                             <TextButton color="#147CDB" onPress={() => {setIsModalVisible(false), setPassword("")}} size={22} >Cancel</TextButton>
-                            <TextButton color="#147CDB" onPress={() => handleProvision("abcd1234")} size={22} >Provision</TextButton>
+                            <TextButton color="#147CDB" onPress={() => handleProvision(wifiStore.getPop_id())} size={22} >Provision</TextButton>
                             {/* <CustomButton onPress={() => setIsModalVisible(false)} title={"Cancel"} color={"#147CDB"} disabled={false}/>
                             <CustomButton onPress={handleProvision} title={"Provision"} color={"#147CDB"} disabled={false}/> */}
 

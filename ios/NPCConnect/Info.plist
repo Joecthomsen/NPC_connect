@@ -85,4 +85,6 @@
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
   </dict>
+  <key>com.apple.developer.networking.wifi-info</key>
+  <true/>
 </plist>

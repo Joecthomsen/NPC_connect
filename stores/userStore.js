@@ -17,26 +17,32 @@ class UserStore {
     makeObservable(this, {
       email: observable,
       setEmail: action,
+
       firstName: observable,
       setFirstName: action,
+
       lastName: observable,
       setLastName: action,
       password: observable,
       setPassword: action,
+
       confirmPassword: observable,
       setConfirmPassword: action,
       accessToken: observable,
       setAccessToken: action,
       getAccessToken: action,
+
       refreshToken: observable,
       setRefreshToken: action,
       getRefreshToken: action,
       name: observable,
       setName: action,
+
       controllers: observable,
       setControllers: action,
       addController: action,
       removeController: action,
+      getControllers: action,
     });
   }
 
@@ -83,6 +89,9 @@ class UserStore {
   }
   removeController(controller) {
     this.controllers.splice(this.controllers.indexOf(controller), 1);
+  }
+  getControllers() {
+    return this.controllers;
   }
 }
 

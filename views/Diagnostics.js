@@ -34,7 +34,6 @@ const Diagnostics = observer(() => {
 
   return (
     <Layout buttons={buttons}>
-      {/* <Text>Diagnostics</Text> */}
       <View style={[styles.container, { width: width }]}>
         <ScrollView horizontal={true}>
           {userStore.controllers.map((controller, index) => (

@@ -20,42 +20,73 @@ import controllerStore from "../stores/controllerStore";
 import { observer } from "mobx-react-lite";
 import IconButton from "../components/IconButton";
 import userStore from "../stores/userStore";
+import {
+  searchForSocketsOnNetwork,
+  sendTestMessage,
+  sendMessageToSocketOnNetwork,
+  getSockets,
+  handleSocketState,
+} from "../service/socketHandler";
+import wifiStore from "../stores/wifiStore";
 //import io from "socket.io-client";
-import TcpSocket from "react-native-tcp-socket";
+//import TcpSocket from "react-native-tcp-socket";
+import WifiManager from "react-native-wifi-reborn";
+//import { connectToSocketsOnNetwork } from "../service/socketHandler";
 
 const Dashboard = observer(({ navigation }) => {
   //var net = require("react-native-tcp");
 
-  const socket_url = "NPC_Connect.local:3333";
+  // useEffect(() => {
+  //   try {
+  //     console.log("Executing useEffect");
+  //     WifiManager.getCurrentWifiSSID()
+  //       .then((ssid) => {
+  //         console.log("Your current connected wifi SSID is " + ssid);
+  //       })
+  //       .catch((error) => {
+  //         console.log("Error getting current SSID:", error);
+  //         console.log("Cannot get current SSID!");
+  //       });
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }, []);
 
-  const options = {
-    port: 3333,
-    host: "NPC_Connect.local",
-    //localAddress: "NPC_Connect.local",
-    reuseAddress: true,
-    // localPort: 20000,
-    // interface: "wifi",
+  const testWifi = async () => {
+    try {
+      const ssid = await WifiManager.getCurrentWifiSSID();
+      console.log("Your current connected wifi SSID is " + ssid);
+    } catch (error) {
+      console.log(error);
+    }
+    console.log("testWifi");
   };
 
-  const client = TcpSocket.createConnection(options, () => {
-    // Write on the socket
-    client.write("Hello server!");
-  });
+  // const handleSockets = () => {
+  //   searchForSocketsOnNetwork();
+  //   const sockets = getSockets();
+  //   console.log("socket.length: " + sockets.length);
+  //   if (sockets.length > 0) {
+  //     console.log("Sockets are connected");
+  //     sockets.forEach((socket) => {
+  //       socket.client.write("GET_STATE");
+  //     });
+  //   } else {
+  //     console.log("Sockets are not connected");
+  //   }
+  // };
 
-  client.on("error", (err) => {
-    console.error("Error:", err);
-  });
-
-  client.on("close", () => {
-    console.log("Connection closed");
-  });
+  useEffect(() => {
+    handleSocketState();
+    //setInterval(handleSocketState, 15000);
+  }, []);
 
   const height = useHeaderHeight();
 
   const buttons = [
     <IconButton
       iconName={"person-outline"}
-      onPress={() => console.log("Click me baby one more time!")}
+      onPress={() => testWifi()}
       color="white"
       size={36}
     />,
@@ -88,8 +119,6 @@ const Dashboard = observer(({ navigation }) => {
     const blue = 0;
     return `rgb(${red},${green},${blue})`;
   };
-
-  console.log("Controllers: ", userStore.controllers);
 
   return (
     <Layout buttons={buttons}>

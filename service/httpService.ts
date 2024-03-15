@@ -2,8 +2,8 @@ import { NavigationProp } from "@react-navigation/native"
 import userStore from "../stores/userStore";
 import { JwtPayload, jwtDecode } from "jwt-decode";
 import "core-js/stable/atob";   //Import in oder to make jwt decoding work
-import { pop } from "core-js/core/array";
 import controllerStore from "../stores/controllerStore";
+//import { connectToSocketOnNetwork, searchForSocketsOnNetwork, sendMessageToSocketOnNetwork } from "./socketHandler";
 
 
 interface DecodedJwtPayload {
@@ -21,6 +21,14 @@ interface Response {
   message: string;
 }
 
+interface ResponseSignInController {
+  statusCode: number;
+    message: {
+      accessToken: string;
+      refreshToken: string;
+    };
+}
+
 const URL = "http://95.217.159.233";
   
 
@@ -32,7 +40,7 @@ export const signInService = async (email: string, password: string): Promise<Re
 
   try {
     //const url = "http://95.217.159.233";
-    const response = await fetch(URL + "/auth/login", {
+    const response = await fetch(URL + "/auth/user/sign_in", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -47,7 +55,6 @@ export const signInService = async (email: string, password: string): Promise<Re
         const data = await response.json();
         console.log(data);
         return { statusCode: response.status, message: data.message };
-        //navigation.navigate("Sign In");
     } 
     else {
 
@@ -77,7 +84,7 @@ export const signInService = async (email: string, password: string): Promise<Re
 export const signUpService = async (firstName: string, lastName: string, email: string, password: string): Promise<Response> => {
 
       try {
-        const response = await fetch("http://95.217.159.233/auth/signUp", {
+        const response = await fetch(URL + "/auth/user/sign_up", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -96,7 +103,6 @@ export const signUpService = async (firstName: string, lastName: string, email: 
           if(response.status === 409) 
           {
             return { statusCode: response.status, message: "User already exists" };
-              //throw new Error("Something went wrong")
           }
           else if(response.status === 400){
             return { statusCode: response.status, message: "All parameters must be filled" };
@@ -109,10 +115,10 @@ export const signUpService = async (firstName: string, lastName: string, email: 
             const data = await response.json()
             userStore.setAccessToken(data.accessToken) 
             userStore.setRefreshToken(data.refreshToken)
-            return { statusCode: response.status, message: "Sign up successful" };
+            return { statusCode: response.status, message: "Sign up successfully" };
           }
           else {
-            return { statusCode: response.status, message: "Something went wrong" };
+            return { statusCode: response.status, message: "Unexpected status code" };
           }
       } catch (error) {
           return { statusCode: 500, message: error.message };
@@ -121,12 +127,10 @@ export const signUpService = async (firstName: string, lastName: string, email: 
   
 }
 
-
-
-export const addControllerService = async (popID: string, name: string ) => {
+export const addControllerService = async (popID: string, name: string ): Promise<Response> => {
   try {
     //const { name, popID } = props;
-    const response = await fetch(URL + "/auth/add_controller", {
+    const response = await fetch(URL + "/auth/controller/add_controller", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -142,18 +146,50 @@ export const addControllerService = async (popID: string, name: string ) => {
         console.log("Something went wrong");
         const data = await response.json();
         console.log(data);
+        return { statusCode: response.status, message: "Something went wrong" };
     } 
     else {
-
       const data = await response.json();
       const {refreshToken, controleGears} = data.controller;
-      userStore.addController({popID: popID, name: name});
-
-      //Handle TCP transfer of refresh token here. 
-
+      userStore.addController({popID: popID, name: name, refreshToken: refreshToken});
+      //connectToSocketOnNetwork(popID);
+      return { statusCode: response.status, message: "Controller added successfully" };
     }
     
   } catch (error) {
     console.error(error);
+    return { statusCode: 500, message: error.message };
   }
+}
+
+export const signInControllerService = async (popID: string): Promise<ResponseSignInController> => {
+  try {
+    const response = await fetch(URL + "/auth/controller/sign_in", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "token": userStore.getAccessToken(),
+        "popID": popID,
+      },
+      body: JSON.stringify({"nil":"nil"}),
+    });
+
+    if (response.status !== 200) {
+        console.log("Something went wrong");
+        return { statusCode: response.status, message: {accessToken: "", refreshToken: ""} };
+    }
+    const {refreshToken, accessToken} = await response.json();
+    return { statusCode: response.status, message: {accessToken: accessToken, refreshToken: refreshToken} };
+}catch (error) {
+    console.error(error);
+    return { statusCode: 500, message: error.message };
+  }
+}
+
+
+export const fetchDiagnosticsService = async (popID: string, manufactoringID: string): Promise<Response> => {
+
+
+
+  return new Promise((resolve, reject) => {})
 }

@@ -13,9 +13,6 @@ import WifiScanResult from "./views/WifiScanResult";
 import Diagnostics from "./views/Diagnostics";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-// import { useCameraDevices, Camera } from "react-native-vision-camera";
-// import { BarCodeScanner } from "expo-barcode-scanner";
-// import { Camera } from "expo-camera";
 
 const Stack = createNativeStackNavigator();
 

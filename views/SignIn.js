@@ -15,21 +15,22 @@ import userStore from "../stores/userStore";
 import { observer } from "mobx-react-lite";
 import { signInService } from "../service/httpService";
 import loadingStore from "../stores/loadingStore";
+import { searchForSocketsOnNetwork } from "../service/socketHandler";
 
 export default SignIn = observer(({ navigation }) => {
   const height = useHeaderHeight();
 
   const buttons = [
-    <Button
-      key="button1"
-      title="Button 1"
-      onPress={() => console.log("Button 1 pressed")}
-    />,
-    <Button
-      key="button2"
-      title="Button 2"
-      onPress={() => console.log("Button 2 pressed")}
-    />,
+    // <Button
+    //   key="button1"
+    //   title="Button 1"
+    //   onPress={() => console.log("Button 1 pressed")}
+    // />,
+    // <Button
+    //   key="button2"
+    //   title="Button 2"
+    //   onPress={() => console.log("Button 2 pressed")}
+    // />,
     // Add more buttons as needed
   ];
 
@@ -41,8 +42,6 @@ export default SignIn = observer(({ navigation }) => {
       navigation
     );
 
-    console.log("Response: ", response);
-
     if (response.statusCode === 401) {
       Alert.alert("Invalid credentials", "Please try again");
     } else if (response.statusCode === 500) {
@@ -51,6 +50,7 @@ export default SignIn = observer(({ navigation }) => {
       navigation.navigate("Dashboard");
     }
     loadingStore.setLoading(false);
+    searchForSocketsOnNetwork();
   };
 
   return (

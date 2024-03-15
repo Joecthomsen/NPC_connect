@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 import { BarCodeScanner } from "expo-barcode-scanner";
-// import { Camera } from "expo-camera";
 import { useEffect, useState } from "react";
 import CustomButton from "../components/CustomButton";
 import Provisioner from "../Provisioner";
 import wifiStore from "../stores/wifiStore";
+import WifiManager from "react-native-wifi-reborn";
 
 const QrScanner = ({ navigation }) => {
   const [hasPermission, setHasPermission] = useState(null);
@@ -23,6 +23,15 @@ const QrScanner = ({ navigation }) => {
   }, []);
 
   const handleSecureSession = async () => {
+    // WifiManager.getCurrentWifiSSID().then(
+    //   (ssid) => {
+    //     console.log("Your current connected wifi SSID is " + ssid);
+    //   },
+    //   () => {
+    //     console.log("Cannot get current SSID!");
+    //   }
+    // );
+
     console.log("Establishing secure session..");
     wifiStore.setPop_id("abcd1234");
     provisioner = new Provisioner(wifiStore.getPop_id());
