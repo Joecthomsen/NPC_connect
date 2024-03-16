@@ -23,17 +23,8 @@ const QrScanner = ({ navigation }) => {
   }, []);
 
   const handleSecureSession = async () => {
-    // WifiManager.getCurrentWifiSSID().then(
-    //   (ssid) => {
-    //     console.log("Your current connected wifi SSID is " + ssid);
-    //   },
-    //   () => {
-    //     console.log("Cannot get current SSID!");
-    //   }
-    // );
-
     console.log("Establishing secure session..");
-    wifiStore.setPop_id("abcd1234");
+    wifiStore.setPop_id(wifiStore.getPop_id());
     provisioner = new Provisioner(wifiStore.getPop_id());
     await provisioner.establishSecureSession();
     console.log("Secure session established!");
@@ -52,7 +43,10 @@ const QrScanner = ({ navigation }) => {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
+    console.log("popID: " + JSON.parse(data).pop);
+    console.log("ap_name: " + JSON.parse(data).name);
     wifiStore.setPop_id(JSON.parse(data).pop);
+    wifiStore.setAp_name(JSON.parse(data).name);
     //setPop_id(JSON.parse(data).pop);
     //setPop_id("abcd1234");
     //console.log(pop_id);
@@ -62,6 +56,17 @@ const QrScanner = ({ navigation }) => {
   const startCommissioning = async () => {
     wifiStore.emptyAccessPoints();
     wifiStore.setLoading(true);
+    try {
+      const ssid = await WifiManager.getCurrentWifiSSID();
+      wifiStore.setSource_ap_name(ssid);
+      console.log("Storing source ssid: " + wifiStore.getSource_ap_name());
+      console.log(
+        "Connecting to controller AP with name: " + wifiStore.getAp_name()
+      );
+      await WifiManager.connectToSSID(wifiStore.getAp_name()); // Connect to controller AP
+    } catch (error) {
+      console.log(error);
+    }
     navigation.navigate("Wifi Scan Result");
     setScanned(false);
     console.log("Starting commissioning..");

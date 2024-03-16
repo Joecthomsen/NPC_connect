@@ -13,6 +13,7 @@ import { addControllerService } from '../service/httpService';
 import controllerStore from '../stores/controllerStore';
 import loadingStore from '../stores/loadingStore';
 import { connectToSocketOnNetwork } from '../service/socketHandler';
+import  WifiManager  from 'react-native-wifi-reborn';
 
 interface WifiCardProps {
     ssid: string;
@@ -54,8 +55,15 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
 
         console.log("Provisioning WiFi with SSID: " + ssid);
         const provisioner = new Provisioner(wifiStore.getPop_id());
-        await provisioner.configureWiFi(ssid, bbsid, password, channel );
+        await provisioner.configureWiFi(ssid, bbsid, wifiStore.getSource_ap_password(), channel );
         await provisioner.applyWiFi();
+
+        try{
+            WifiManager.connectToProtectedSSID(wifiStore.getSource_ap_name(), wifiStore.getSource_ap_password(), false, false);
+        }catch(e){
+            console.log("Error connecting to wifi. Error: " + e);
+            Alert.alert("Error", "Could not connect to WiFi. Please try again later.");
+        }
 
         // TODO: What to do after provissioning. 
 
@@ -108,12 +116,12 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
                             style={styles.input}
                             placeholder="Password"
                             placeholderTextColor="#484848"
-                            onChangeText={text => setPassword(text)}
+                            onChangeText={text => wifiStore.setSource_ap_password(text)}
                             secureTextEntry={true}
-                            value={password}
+                            value={wifiStore.source_ap_password}
                         />
                         <View style={styles.modalButtonContainer}>
-                            <TextButton color="#147CDB" onPress={() => {setIsModalVisible(false), setPassword("")}} size={22} >Cancel</TextButton>
+                            <TextButton color="#147CDB" onPress={() => {setIsModalVisible(false), wifiStore.setSource_ap_password("")}} size={22} >Cancel</TextButton>
                             <TextButton color="#147CDB" onPress={() => handleProvision(wifiStore.getPop_id())} size={22} >Provision</TextButton>
                             {/* <CustomButton onPress={() => setIsModalVisible(false)} title={"Cancel"} color={"#147CDB"} disabled={false}/>
                             <CustomButton onPress={handleProvision} title={"Provision"} color={"#147CDB"} disabled={false}/> */}
