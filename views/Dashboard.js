@@ -53,15 +53,7 @@ const Dashboard = observer(({ navigation }) => {
   // }, []);
 
   useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.log("Permission to access location was denied");
-        return;
-      }
-      const location = await Location.getCurrentPositionAsync({});
-      console.log("Location permission granted", location);
-    })();
+    handleSocketState();
   }, []);
 
   const testWifi = async () => {

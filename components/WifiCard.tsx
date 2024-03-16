@@ -59,7 +59,7 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
         await provisioner.applyWiFi();
 
         try{
-            WifiManager.connectToProtectedSSID(wifiStore.getSource_ap_name(), wifiStore.getSource_ap_password(), false, false);
+            await WifiManager.connectToProtectedSSID(wifiStore.getSource_ap_name(), wifiStore.getSource_ap_password(), false, false);
         }catch(e){
             console.log("Error connecting to wifi. Error: " + e);
             Alert.alert("Error", "Could not connect to WiFi. Please try again later.");
@@ -71,7 +71,7 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
         
         if(reponse.statusCode === 201) {
             console.log("Controller added to database");
-            
+            connectToSocketOnNetwork(wifiStore.getPop_id());
             navigation?.navigate("Diagnostics")
         }
         else {

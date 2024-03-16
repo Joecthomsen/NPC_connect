@@ -22,6 +22,18 @@ const QrScanner = ({ navigation }) => {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission to access location was denied");
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({});
+      console.log("Location permission granted", location);
+    })();
+  }, []);
+
   const handleSecureSession = async () => {
     console.log("Establishing secure session..");
     wifiStore.setPop_id(wifiStore.getPop_id());

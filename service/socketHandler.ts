@@ -4,6 +4,7 @@ import socketStore from "../stores/socketStore";
 import controllerStore from "../stores/controllerStore";
 import { signInControllerService } from "./httpService";
 import exp from "constants";
+import { get } from "core-js/core/dict";
 
 type SocketType = {
     popID: string;
@@ -33,7 +34,7 @@ const updateInterval = () => {
   switch (getSocketState()) {
     case SocketStates.CONNECTED:
       clearInterval(intervalId);
-      intervalId = setInterval(handleSocketState, 30000); // Change interval to 10 seconds when connected
+      intervalId = setInterval(handleSocketState, 20000); // Change interval to 10 seconds when connected
       break;
 
     case SocketStates.DISCONNECTED:
@@ -55,9 +56,10 @@ export const handleSocketState = () => {
     switch (socketState) {
         case SocketStates.CONNECTED:
             updateInterval();
-            console.log("Socket is connected");
+            getControllerStatus();            
             break;
         case SocketStates.DISCONNECTED:
+            updateInterval();
             console.log("Socket is disconnected");
             searchForSocketsOnNetwork();
             break;
@@ -71,9 +73,13 @@ export const handleSocketState = () => {
 let intervalId = setInterval(handleSocketState, 15000);
 
 
-export const getControllerStatus = (popID: string) => {
-    console.log("getControllerStatus")
-    sockets.at[0].client.write("GET_STATE");
+
+export const getControllerStatus = () => {
+    console.log("get Controller Status")
+    sockets.forEach(socket => {
+        console.log("socket found")
+        socket.client.write("GET_STATE");  
+    })
 }
 
 export const getSockets = () => {
@@ -132,6 +138,9 @@ export const searchForSocketsOnNetwork = () => {
             console.log("Connection closed");
         });        
     })
+    if(sockets.length > 0){
+        setSocketState(SocketStates.CONNECTED);
+    }
 }
 
 export const connectToSocketOnNetwork = (popID: string) => {
