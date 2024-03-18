@@ -3,18 +3,37 @@ import { makeObservable, observable, action, set } from "mobx";
 class ControllerStore {
   state = 93; //State of all the devices used for the "spedometer" at Danshboard
   selectedController = 0; //Selected controller at Diagnostics
+  selectedControlGear = 0;
   addControllerName = ""; //Name of the controller to be added
+  controleGears = [];
+  controllers = [];
 
   constructor() {
     makeObservable(this, {
       state: observable,
       setState: action,
+
       selectedController: observable,
       setSelectedController: action,
+
+      selectedControlGear: observable,
+      setSelectedControleGear: action,
 
       addControllerName: observable,
       setAddControllerName: action,
       getNewControllerName: action,
+
+      controleGears: observable,
+      setControleGears: action,
+      addControleGear: action,
+      getControleGears: action,
+
+      controllers: observable,
+      setControllers: action,
+      addController: action,
+      removeController: action,
+      getControllers: action,
+      getSelectedController: action,
     });
   }
 
@@ -26,11 +45,39 @@ class ControllerStore {
     this.selectedController = controller;
   }
 
+  setSelectedControleGear(gear) {
+    this.selectedControlGear = gear;
+  }
+
   setAddControllerName(name) {
     this.addControllerName = name;
   }
   getNewControllerName() {
     return this.addControllerName;
+  }
+  setControleGears(gears) {
+    this.controleGears = gears;
+  }
+  addControleGear(gear) {
+    this.controleGears.push(gear);
+  }
+  getControleGears() {
+    return this.controleGears;
+  }
+  setControllers(controllers) {
+    this.controllers = controllers;
+  }
+  addController(controller) {
+    this.controllers.push(controller);
+  }
+  removeController(controller) {
+    this.controllers.splice(this.controllers.indexOf(controller), 1);
+  }
+  getControllers() {
+    return this.controllers;
+  }
+  getSelectedController() {
+    return this.controllers.at(this.selectedController);
   }
 
   get statusText() {

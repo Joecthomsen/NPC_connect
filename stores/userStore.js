@@ -11,7 +11,6 @@ class UserStore {
   signInEmail = "";
   signInPassword = "";
   name = "";
-  controllers = [];
 
   constructor() {
     makeObservable(this, {
@@ -37,12 +36,6 @@ class UserStore {
       getRefreshToken: action,
       name: observable,
       setName: action,
-
-      controllers: observable,
-      setControllers: action,
-      addController: action,
-      removeController: action,
-      getControllers: action,
     });
   }
 
@@ -80,18 +73,6 @@ class UserStore {
     this.setFirstName(firstName);
     this.setLastName(lastName);
     this.name = name;
-  }
-  setControllers(controllers) {
-    this.controllers = controllers;
-  }
-  addController(controller) {
-    this.controllers.push(controller);
-  }
-  removeController(controller) {
-    this.controllers.splice(this.controllers.indexOf(controller), 1);
-  }
-  getControllers() {
-    return this.controllers;
   }
 }
 

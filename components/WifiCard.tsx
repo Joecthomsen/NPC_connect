@@ -60,24 +60,24 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
 
         try{
             await WifiManager.connectToProtectedSSID(wifiStore.getSource_ap_name(), wifiStore.getSource_ap_password(), false, false);
+            const reponse = await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());  //Add the controller to the database
+        
+            if(reponse.statusCode === 201) {
+                console.log("Controller added to database");
+                connectToSocketOnNetwork(wifiStore.getPop_id());
+                navigation?.navigate("Diagnostics")
+            }
+            else {
+                Alert.alert("Error", "Could not add controller. Please try again later.");
+                navigation?.navigate("Dashboard");
+            }
         }catch(e){
             console.log("Error connecting to wifi. Error: " + e);
-            Alert.alert("Error", "Could not connect to WiFi. Please try again later.");
+            Alert.alert("Error", "Could not connect to WiFi.\n" + e);
         }
 
         // TODO: What to do after provissioning. 
 
-        const reponse = await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());  //Add the controller to the database
-        
-        if(reponse.statusCode === 201) {
-            console.log("Controller added to database");
-            connectToSocketOnNetwork(wifiStore.getPop_id());
-            navigation?.navigate("Diagnostics")
-        }
-        else {
-            Alert.alert("Error", "Could not add controller. Please try again later.");
-            navigation?.navigate("Dashboard");
-        }
         
         // while(!connectToSocketOnNetwork(wifiStore.getPop_id())) {
         //     console.log("Waiting for socket connection to be established");

@@ -76,24 +76,25 @@ const QrScanner = ({ navigation }) => {
         "Connecting to controller AP with name: " + wifiStore.getAp_name()
       );
       await WifiManager.connectToSSID(wifiStore.getAp_name()); // Connect to controller AP
+      navigation.navigate("Wifi Scan Result");
+      setScanned(false);
+      console.log("Starting commissioning..");
+      await handleSecureSession();
+      const res = await scanForWiFi();
+      console.log("Scan result : ", res);
+
+      res.forEach((ap) => {
+        console.log("AP : ", ap);
+        wifiStore.addAccessPoint(ap);
+      });
+
+      console.log("Wifistore : ", wifiStore.getAccessPoints());
+      wifiStore.setLoading(false);
+      console.log("Commissioning done!");
     } catch (error) {
       console.log(error);
     }
-    navigation.navigate("Wifi Scan Result");
-    setScanned(false);
-    console.log("Starting commissioning..");
-    await handleSecureSession();
-    const res = await scanForWiFi();
-    console.log("Scan result : ", res);
-
-    res.forEach((ap) => {
-      console.log("AP : ", ap);
-      wifiStore.addAccessPoint(ap);
-    });
-
-    console.log("Wifistore : ", wifiStore.getAccessPoints());
     wifiStore.setLoading(false);
-    console.log("Commissioning done!");
   };
 
   const renderCamera = () => {

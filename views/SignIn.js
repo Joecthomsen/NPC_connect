@@ -48,9 +48,9 @@ export default SignIn = observer(({ navigation }) => {
       Alert.alert("Server error", "Wait a minut and try again");
     } else if (response.statusCode === 200) {
       navigation.navigate("Dashboard");
+      searchForSocketsOnNetwork();
     }
     loadingStore.setLoading(false);
-    searchForSocketsOnNetwork();
   };
 
   return (
@@ -146,11 +146,6 @@ const styles = StyleSheet.create({
     color: "#545454",
     fontSize: 30,
     fontWeight: "normal",
-
-    // marginBottom: 40,
-    // width: 300,
-    // height: 50,
-    // padding: 10,
     borderRadius: 10,
   },
   singup_button: {

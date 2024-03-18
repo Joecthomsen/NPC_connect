@@ -32,11 +32,13 @@ const Diagnostics = observer(() => {
     />,
   ];
 
+  console.log("Test: ", controllerStore.getSelectedController());
+
   return (
     <Layout buttons={buttons}>
       <View style={[styles.container, { width: width }]}>
         <ScrollView horizontal={true}>
-          {userStore.controllers.map((controller, index) => (
+          {controllerStore.controllers.map((controller, index) => (
             <View style={styles.controller_button_container} key={index}>
               <SelectorButton
                 iconName={"hardware-chip-outline"}
@@ -52,20 +54,45 @@ const Diagnostics = observer(() => {
         </ScrollView>
       </View>
       <Text>Diagnostics</Text>
+
+      <View style={[styles.information_container, { width: width }]}>
+        {controllerStore.controllers.length > 0 &&
+        controllerStore.getSelectedController().controleGears.length > 0 ? (
+          <ScrollView horizontal={true}>
+            {controllerStore
+              .getSelectedController()
+              .controleGears.map((controleGear, index) => (
+                <View style={styles.controller_button_container} key={index}>
+                  <SelectorButton
+                    iconName={"bulb-outline"}
+                    color={"#9214bc"}
+                    selectedColor={"#B4D719"}
+                    selected={index === controllerStore.selectedControlGear}
+                    size={50}
+                    //text={controller.name}
+                    onPress={() =>
+                      controllerStore.setSelectedControleGear(index)
+                    }
+                  />
+                </View>
+              ))}
+          </ScrollView>
+        ) : (
+          <Text style={styles.no_control_gear_text}>No Controle Gears</Text>
+        )}
+      </View>
     </Layout>
   );
 });
 
 const styles = StyleSheet.create({
   container: {
-    flex: 0.15,
+    flex: 0.2,
     backgroundColor: "#000833",
     alignSelf: "flex-start",
     justifyContent: "center",
     alignItems: "center",
-    //width: 300,
-    //height: 20,
-    marginTop: -250,
+    marginTop: -130,
   },
   controller_button_container: {
     flex: 1,
@@ -76,6 +103,20 @@ const styles = StyleSheet.create({
   },
   controller_button_text: {
     fontSize: 15,
+    fontWeight: "normal",
+    color: "#9214bc",
+    textAlign: "center",
+  },
+  information_container: {
+    flex: 0.2,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 20,
+    backgroundColor: "#000833",
+  },
+  no_control_gear_text: {
+    fontSize: 20,
     fontWeight: "normal",
     color: "#9214bc",
     textAlign: "center",

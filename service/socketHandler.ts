@@ -55,11 +55,11 @@ const updateInterval = () => {
 export const handleSocketState = () => {
     switch (socketState) {
         case SocketStates.CONNECTED:
-            updateInterval();
+            //updateInterval();
             getControllerStatus();            
             break;
         case SocketStates.DISCONNECTED:
-            updateInterval();
+            //updateInterval();
             console.log("Socket is disconnected");
             searchForSocketsOnNetwork();
             break;
@@ -68,86 +68,83 @@ export const handleSocketState = () => {
     }
 }
 
-
-// Define the initial interval duration
-let intervalId = setInterval(handleSocketState, 15000);
-
-
-
 export const getControllerStatus = () => {
-    console.log("get Controller Status")
     sockets.forEach(socket => {
-        console.log("socket found")
+        console.log("Getting controller status for controller with pop-ID: " + socket.popID);
         socket.client.write("GET_STATE");  
     })
 }
+
+// Define the initial interval durationr
+let intervalId = setInterval(getControllerStatus, 15000);
+
 
 export const getSockets = () => {
     return sockets;
 }
 
 export const searchForSocketsOnNetwork = () => {
-
     console.log("Connecting to sockets on network");
-
-    const controllers = userStore.getControllers();
-
+    const controllers = controllerStore.getControllers();
+    
     controllers.forEach(controller => {
         console.log("controller: ", controller);
         const options = {
             port: 3333,
             host: "NPC_Connect_" + controller.popID + ".local",
-            //reuseAddress: true,
             autoReconnect: true,
         };
 
-        const client = TcpSocket.createConnection(options, () => {
-            client.write("Hello server!");
-        });
+        try {
+            const client = TcpSocket.createConnection(options, () => {
+                client.write("Hello server!");
+            });
 
-        sockets.push({"popID": controller.popID, "client": client})
-        //Implement if socket exists, dont add
-               
-        // Add event listeners for incoming data
-        client.on('data', async (data) => {
+            // Add event listeners for incoming data
+            client.on('data', async (data) => {
+                console.log("DATA:", data.toString())
+                const jsonData = JSON.parse(data.toString());
 
-            console.log("DATA:", data.toString())
-            const jsonData = JSON.parse(data.toString());
-
-            if(jsonData.status === "Not authenticated state")
-            {
-                console.log("AUTHENTICATION ERROR. Solving...")
-                const response = await signInControllerService(jsonData.popID);
-                console.log("response: ", response);
-                if(response.statusCode === 200){
-                    client.write("SET_REFRESH_TOKEN " + response.message.refreshToken);
-                    //console.log("AUTHENTICATION SUCCESSFUL");
+                if(jsonData.status === "Not authenticated state") {
+                    console.log("AUTHENTICATION ERROR. Solving...")
+                    const response = await signInControllerService(jsonData.popID);
+                    console.log("response: ", response);
+                    if(response.statusCode === 200){
+                        client.write("SET_REFRESH_TOKEN " + response.message.refreshToken);
+                    }
                 }
-            }
-        });
+            });
 
-        client.on("error", (error) => {
-            console.log("Connection error:", error);
-        });
+            client.on("error", (error) => {
+                console.log("Connection error:", error);
+            });
 
-        client.on("connect", () => {
-            console.log("Connected to controller");
-        })
+            client.on("connect", () => {
+                console.log("Connected to controller");
+                sockets.push({"popID": controller.popID, "client": client});
+                setSocketState(SocketStates.CONNECTED);
+            });
 
-        client.on("close", () => {
-            console.log("Connection closed");
-        });        
-    })
-    if(sockets.length > 0){
-        setSocketState(SocketStates.CONNECTED);
-    }
+            client.on("close", () => {
+                console.log("Connection closed");
+                sockets = sockets.filter(socket => socket.popID !== controller.popID);
+                if(sockets.length === 0 ){
+                    setSocketState(SocketStates.DISCONNECTED)
+                }
+            });
+        } catch (error) {
+            console.log("Error connecting to socket:", error);
+            // Handle error as per your requirement
+        }
+    });
+
 }
 
 export const connectToSocketOnNetwork = (popID: string) => {
 
     console.log("Connecting to sockets on network");
 
-    const controllers = userStore.getControllers();
+    const controllers = controllerStore.getControllers();
 
         console.log("controller: ", popID);
         const options = {

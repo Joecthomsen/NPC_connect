@@ -69,7 +69,7 @@ export const signInService = async (email: string, password: string): Promise<Re
       userStore.setName(decodedAccessToken.name);
       userStore.setAccessToken(accessToken);
       userStore.setRefreshToken(refreshToken);
-      userStore.setControllers(controllers);
+      controllerStore.setControllers(controllers);
 
       return { statusCode: response.status, message: "Sign in successful" };
     }
@@ -151,7 +151,7 @@ export const addControllerService = async (popID: string, name: string ): Promis
     else {
       const data = await response.json();
       const {refreshToken, controleGears} = data.controller;
-      userStore.addController({popID: popID, name: name, refreshToken: refreshToken});
+      controllerStore.addController({popID: popID, name: name, refreshToken: refreshToken});
       //connectToSocketOnNetwork(popID);
       return { statusCode: response.status, message: "Controller added successfully" };
     }
