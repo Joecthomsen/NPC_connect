@@ -1,4 +1,4 @@
-import { makeObservable, observable, action, set } from "mobx";
+import { makeObservable, observable, action } from "mobx";
 
 class ControllerStore {
   state = 93; //State of all the devices used for the "spedometer" at Danshboard
@@ -7,6 +7,7 @@ class ControllerStore {
   addControllerName = ""; //Name of the controller to be added
   controleGears = [];
   controllers = [];
+  diagnosticsData = {};
 
   constructor() {
     makeObservable(this, {
@@ -18,6 +19,7 @@ class ControllerStore {
 
       selectedControlGear: observable,
       setSelectedControleGear: action,
+      getSelectedControleGearManuId: action,
 
       addControllerName: observable,
       setAddControllerName: action,
@@ -34,21 +36,21 @@ class ControllerStore {
       removeController: action,
       getControllers: action,
       getSelectedController: action,
+
+      diagnosticsData: observable,
+      setDiagnosticsData: action,
     });
   }
 
   setState(state) {
     this.state = state;
   }
-
   setSelectedController(controller) {
     this.selectedController = controller;
   }
-
   setSelectedControleGear(gear) {
     this.selectedControlGear = gear;
   }
-
   setAddControllerName(name) {
     this.addControllerName = name;
   }
@@ -64,6 +66,11 @@ class ControllerStore {
   getControleGears() {
     return this.controleGears;
   }
+  getSelectedControleGearManuId() {
+    return this.controllers
+      .at(this.selectedController)
+      .controleGears.at(this.selectedControlGear); //this.controleGears.at(this.selectedControlGear);
+  }
   setControllers(controllers) {
     this.controllers = controllers;
   }
@@ -78,6 +85,9 @@ class ControllerStore {
   }
   getSelectedController() {
     return this.controllers.at(this.selectedController);
+  }
+  setDiagnosticsData(data) {
+    this.diagnosticsData = data;
   }
 
   get statusText() {

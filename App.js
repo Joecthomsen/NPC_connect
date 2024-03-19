@@ -13,6 +13,7 @@ import WifiScanResult from "./views/WifiScanResult";
 import Diagnostics from "./views/Diagnostics";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import DiagnosticsDetailes from "./views/DiagnosticsDetailes";
 
 const Stack = createNativeStackNavigator();
 
@@ -42,6 +43,10 @@ export default function App() {
         <Stack.Screen name="QrScanner" component={QrScanner} />
         <Stack.Screen name="Wifi Scan Result" component={WifiScanResult} />
         <Stack.Screen name="Diagnostics" component={Diagnostics} />
+        <Stack.Screen
+          name="Diagnostics Detailes"
+          component={DiagnosticsDetailes}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

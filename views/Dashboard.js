@@ -20,38 +20,10 @@ import controllerStore from "../stores/controllerStore";
 import { observer } from "mobx-react-lite";
 import IconButton from "../components/IconButton";
 import userStore from "../stores/userStore";
-import {
-  searchForSocketsOnNetwork,
-  sendTestMessage,
-  sendMessageToSocketOnNetwork,
-  getSockets,
-  handleSocketState,
-} from "../service/socketHandler";
-import wifiStore from "../stores/wifiStore";
-//import io from "socket.io-client";
-//import TcpSocket from "react-native-tcp-socket";
+import { handleSocketState } from "../service/socketHandler";
 import WifiManager from "react-native-wifi-reborn";
-import * as Location from "expo-location";
 
 const Dashboard = observer(({ navigation }) => {
-  //var net = require("react-native-tcp");
-
-  // useEffect(() => {
-  //   try {
-  //     console.log("Executing useEffect");
-  //     WifiManager.getCurrentWifiSSID()
-  //       .then((ssid) => {
-  //         console.log("Your current connected wifi SSID is " + ssid);
-  //       })
-  //       .catch((error) => {
-  //         console.log("Error getting current SSID:", error);
-  //         console.log("Cannot get current SSID!");
-  //       });
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }, []);
-
   useEffect(() => {
     handleSocketState();
   }, []);
@@ -65,20 +37,6 @@ const Dashboard = observer(({ navigation }) => {
     }
     console.log("testWifi");
   };
-
-  // const handleSockets = () => {
-  //   searchForSocketsOnNetwork();
-  //   const sockets = getSockets();
-  //   console.log("socket.length: " + sockets.length);
-  //   if (sockets.length > 0) {
-  //     console.log("Sockets are connected");
-  //     sockets.forEach((socket) => {
-  //       socket.client.write("GET_STATE");
-  //     });
-  //   } else {
-  //     console.log("Sockets are not connected");
-  //   }
-  // };
 
   useEffect(() => {
     handleSocketState();

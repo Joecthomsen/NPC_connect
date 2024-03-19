@@ -70,7 +70,7 @@ export const signInService = async (email: string, password: string): Promise<Re
       userStore.setAccessToken(accessToken);
       userStore.setRefreshToken(refreshToken);
       controllerStore.setControllers(controllers);
-
+      
       return { statusCode: response.status, message: "Sign in successful" };
     }
   } catch (error) {
@@ -151,7 +151,7 @@ export const addControllerService = async (popID: string, name: string ): Promis
     else {
       const data = await response.json();
       const {refreshToken, controleGears} = data.controller;
-      controllerStore.addController({popID: popID, name: name, refreshToken: refreshToken});
+      controllerStore.addController({popID: popID, name: name, refreshToken: refreshToken, controleGears: controleGears});
       //connectToSocketOnNetwork(popID);
       return { statusCode: response.status, message: "Controller added successfully" };
     }
@@ -187,9 +187,23 @@ export const signInControllerService = async (popID: string): Promise<ResponseSi
 }
 
 
-export const fetchDiagnosticsService = async (popID: string, manufactoringID: string): Promise<Response> => {
-
-
-
-  return new Promise((resolve, reject) => {})
+export const fetchDiagnosticsService = async (manufactoringID: string): Promise<Response> => {
+  try {
+    const response = await fetch(URL + "/controller/diagnostics/" + manufactoringID, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "token": userStore.getAccessToken(),
+    }})
+    if (response.status !== 200) {
+        console.log("Something went wrong");
+        return { statusCode: response.status, message: "Something went wrong" };
+    }
+    const data = await response.json();
+    return { statusCode: response.status, message: data };
+  } catch (error) {
+    console.error(error);
+    return { statusCode: 500, message: error.message };
+  }
 }
+

@@ -49,7 +49,27 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
         setIsModalVisible(true);
       }
 
-      const handleProvision = async (pop_id: string) => {
+      let attempts = 0;
+    const maxAttempts = 5;
+
+    const connectToWifiWithRetry = async () => {
+        while (attempts < maxAttempts) {
+            try {
+                await WifiManager.connectToProtectedSSID(wifiStore.getSource_ap_name(), wifiStore.getSource_ap_password(), false, false);
+                console.log("Connected to Wi-Fi successfully!");
+                return; // If connection is successful, exit the loop
+            } catch (e) {
+                attempts++;
+                console.log(`Error connecting to Wi-Fi. Attempt ${attempts}/${maxAttempts}. Error: ${e}`);
+                // Wait for a brief period before retrying
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second before retrying
+            }
+        }
+        console.log(`Failed to connect to Wi-Fi after ${maxAttempts} attempts.`);
+        Alert.alert("Error", "Could not connect to Wi-Fi after multiple attempts.");
+    };
+
+    const handleProvision = async (pop_id: string) => {
 
         loadingStore.setLoading(true);
 
@@ -57,9 +77,16 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
         const provisioner = new Provisioner(wifiStore.getPop_id());
         await provisioner.configureWiFi(ssid, bbsid, wifiStore.getSource_ap_password(), channel );
         await provisioner.applyWiFi();
+        
 
         try{
-            await WifiManager.connectToProtectedSSID(wifiStore.getSource_ap_name(), wifiStore.getSource_ap_password(), false, false);
+            await connectToWifiWithRetry();//WifiManager.connectToProtectedSSID(wifiStore.getSource_ap_name(), wifiStore.getSource_ap_password(), false, false);
+        }catch(e){
+            console.log("Error connecting to wifi. Error: " + e);
+            Alert.alert("Error", "Could not connect to WiFi.\n" + e);
+        }
+
+        try {
             const reponse = await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());  //Add the controller to the database
         
             if(reponse.statusCode === 201) {
@@ -71,10 +98,13 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
                 Alert.alert("Error", "Could not add controller. Please try again later.");
                 navigation?.navigate("Dashboard");
             }
-        }catch(e){
-            console.log("Error connecting to wifi. Error: " + e);
-            Alert.alert("Error", "Could not connect to WiFi.\n" + e);
+        } catch (error) {
+            console.log("Error adding controller to database. Error: " + error);
+                Alert.alert("Error", "Could not add controller. Please try again later.");
+                navigation?.navigate("Dashboard");
         }
+
+    
 
         // TODO: What to do after provissioning. 
 

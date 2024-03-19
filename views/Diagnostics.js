@@ -6,33 +6,53 @@ import {
   Dimensions,
   TouchableOpacity,
 } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import Layout from "./Layout";
 import IconButton from "../components/IconButton";
-import userStore from "../stores/userStore";
 import controllerStore from "../stores/controllerStore";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { useState } from "react";
 import SelectorButton from "../components/SelectorButton";
 import { observer } from "mobx-react-lite";
+import { fetchDiagnosticsService } from "../service/httpService";
+import loadingStore from "../stores/loadingStore";
 
-const Diagnostics = observer(() => {
+const Diagnostics = observer(({ navigation }) => {
   const { width } = Dimensions.get("window");
 
-  const [selectedButton, setSelectedButton] = useState(0);
+  const handleSeeMore = () => {
+    navigation.navigate("Diagnostics Detailes");
+  };
 
   const buttons = [
     <IconButton
       iconName={"person-outline"}
       onPress={() => console.log("Click me baby one more time!")}
+      size={36}
+      color="white"
     />,
     <IconButton
-      iconName={"qr-code-outline"}
-      onPress={() => navigation.navigate("QrScanner")}
+      iconName={"sunny-outline"}
+      onPress={() => console.log("Click me baby one more time!")}
+      size={36}
+      color="white"
     />,
   ];
 
-  console.log("Test: ", controllerStore.getSelectedController());
+  useEffect(() => {
+    const fetchData = async () => {
+      loadingStore.setLoading(true);
+      //controllerStore.getControllers();
+      console.log("manuID: ", controllerStore.getSelectedControleGearManuId());
+      const data = await fetchDiagnosticsService(
+        controllerStore.getSelectedControleGearManuId()
+      );
+      controllerStore.setDiagnosticsData(data.message);
+      loadingStore.setLoading(false);
+      console.log("Data: ", data);
+    };
+    if (controllerStore.getControllers().length > 0) {
+      fetchData();
+    }
+  }, [controllerStore.selectedControlGear]);
 
   return (
     <Layout buttons={buttons}>
@@ -55,7 +75,7 @@ const Diagnostics = observer(() => {
       </View>
       <Text>Diagnostics</Text>
 
-      <View style={[styles.information_container, { width: width }]}>
+      <View style={[styles.controle_gear_container, { width: width }]}>
         {controllerStore.controllers.length > 0 &&
         controllerStore.getSelectedController().controleGears.length > 0 ? (
           <ScrollView horizontal={true}>
@@ -81,6 +101,81 @@ const Diagnostics = observer(() => {
           <Text style={styles.no_control_gear_text}>No Controle Gears</Text>
         )}
       </View>
+      <View style={[styles.information_container, { width: width }]}>
+        <Text style={styles.information_text}>
+          Operating time:{" "}
+          {Math.floor(
+            parseInt(controllerStore.diagnosticsData.operating_time) /
+              (60 * 60 * 24)
+          )}{" "}
+          days and{" "}
+          {Math.floor(
+            (parseInt(controllerStore.diagnosticsData.operating_time) %
+              (60 * 60 * 24)) /
+              (60 * 60)
+          )}{" "}
+          hours
+        </Text>
+        <Text style={styles.information_text}>
+          Light source on time:{" "}
+          {Math.floor(
+            parseInt(controllerStore.diagnosticsData.light_source_on_time) /
+              (60 * 60 * 24)
+          )}{" "}
+          days and{" "}
+          {Math.floor(
+            (parseInt(controllerStore.diagnosticsData.light_source_on_time) %
+              (60 * 60 * 24)) /
+              (60 * 60)
+          )}{" "}
+          hours
+        </Text>
+        <Text
+          style={[
+            styles.information_text,
+            {
+              color:
+                controllerStore.diagnosticsData
+                  .light_source_overall_faliure_condition > 0
+                  ? "red"
+                  : "#545454",
+            },
+          ]}
+        >
+          Light source faliures:{" "}
+          {
+            controllerStore.diagnosticsData
+              .light_source_overall_faliure_condition
+          }
+        </Text>
+        <Text
+          style={[
+            styles.information_text,
+            {
+              color:
+                controllerStore.diagnosticsData.overall_faliure_condition > 0
+                  ? "red"
+                  : "#545454",
+            },
+          ]}
+        >
+          NPC Driver faliures:{" "}
+          {controllerStore.diagnosticsData.overall_faliure_condition}
+        </Text>
+        <TouchableOpacity
+          style={{ alignSelf: "flex-end", marginRight: 20 }}
+          onPress={() => handleSeeMore()}
+        >
+          <Text
+            style={[
+              styles.information_text,
+              { alignSelf: "flex-end", color: "white" },
+            ]}
+          >
+            See more . . .
+          </Text>
+        </TouchableOpacity>
+      </View>
     </Layout>
   );
 });
@@ -92,7 +187,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: -130,
+    marginTop: -20,
   },
   controller_button_container: {
     flex: 1,
@@ -107,7 +202,7 @@ const styles = StyleSheet.create({
     color: "#9214bc",
     textAlign: "center",
   },
-  information_container: {
+  controle_gear_container: {
     flex: 0.2,
     flexDirection: "column",
     alignItems: "center",
@@ -120,6 +215,23 @@ const styles = StyleSheet.create({
     fontWeight: "normal",
     color: "#9214bc",
     textAlign: "center",
+  },
+  information_container: {
+    flex: 0.35,
+    // flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    marginTop: 40,
+    paddingStart: 20,
+    backgroundColor: "#000833",
+  },
+  information_text: {
+    fontSize: 16,
+    fontWeight: "normal",
+    //color: "#9214bc",
+    color: "#545454",
+    textAlign: "left",
+    margin: 5,
   },
 });
 
