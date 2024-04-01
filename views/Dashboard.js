@@ -20,13 +20,16 @@ import controllerStore from "../stores/controllerStore";
 import { observer } from "mobx-react-lite";
 import IconButton from "../components/IconButton";
 import userStore from "../stores/userStore";
-import { handleSocketState } from "../service/socketHandler";
+import {
+  handleSocketState,
+  searchForSocketsOnNetwork,
+} from "../service/socketHandler";
 import WifiManager from "react-native-wifi-reborn";
 
 const Dashboard = observer(({ navigation }) => {
-  useEffect(() => {
-    handleSocketState();
-  }, []);
+  // useEffect(() => {
+  //   handleSocketState();
+  // }, []);
 
   const testWifi = async () => {
     try {
@@ -39,7 +42,7 @@ const Dashboard = observer(({ navigation }) => {
   };
 
   useEffect(() => {
-    handleSocketState();
+    searchForSocketsOnNetwork();
     //setInterval(handleSocketState, 15000);
   }, []);
 

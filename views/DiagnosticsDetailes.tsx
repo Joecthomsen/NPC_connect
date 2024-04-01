@@ -3,8 +3,21 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import Layout from "./Layout";
 import IconButton from "../components/IconButton";
 import controllerStore from "../stores/controllerStore";
+import { sendMessageToSocketOnNetwork } from "../service/socketHandler";
 
 const DiagnosticsDetailes: React.FC = () => {
+
+    const [blinking, setBlinking] = React.useState(false);
+
+    const startBlinking = () => {
+        setBlinking(true);
+        sendMessageToSocketOnNetwork(controllerStore.getSelectedController().popID, "BLINK_LAMP " + controllerStore.getSelectedControleGearManuId());
+    };
+
+    const stopBlinking = () => {
+        setBlinking(false);
+        sendMessageToSocketOnNetwork(controllerStore.getSelectedController().popID, "STOP_BLINK");
+    };
 
     const buttons = [
         <IconButton
@@ -15,9 +28,9 @@ const DiagnosticsDetailes: React.FC = () => {
         />,
         <IconButton
           iconName={"sunny-outline"}
-          onPress={() => console.log("Click me baby one more time!")}
+          onPress={blinking ? () => stopBlinking() : () => startBlinking()}
           size={36}
-          color="white"
+          color={blinking ? "yellow" : "white"}
         />,
       ];
 
@@ -64,7 +77,10 @@ const DiagnosticsDetailes: React.FC = () => {
                 <Text style={styles.text}>Light source current: {parseInt( controllerStore.diagnosticsData.light_source_current)/1000}A</Text>
                 <Text style={styles.text}>Light source faliure with open circuit: {controllerStore.diagnosticsData.light_source_open_circuit ? <Text style={{color: "red"}}>True</Text> : <Text style={{color: "green"}}>False</Text>}</Text>
                 <Text style={styles.text}>Light source faliure with short circuit: {controllerStore.diagnosticsData.light_source_short_circuit ? <Text style={{color: "red"}}>True</Text> : <Text style={{color: "green"}}>False</Text>}</Text>
-                <Text style={styles.text}>Updated At:{" "}{new Date(controllerStore.diagnosticsData.updatedAt.$date).toLocaleString()}
+                <Text style={styles.text}>
+                Updated At:{" "}
+                    {new Date(controllerStore.diagnosticsData.updatedAt).toLocaleTimeString()}{" "} - {" "}
+                    {new Date(controllerStore.diagnosticsData.updatedAt).toLocaleDateString()}
                 </Text>
             </ScrollView>
         </Layout>

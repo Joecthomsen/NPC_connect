@@ -1,7 +1,15 @@
 import { makeObservable, observable, action, set } from "mobx";
+import TcpSocket from "react-native-tcp-socket";
+
+
+type SocketType = {
+  popID: string;
+  client: TcpSocket.Socket;
+}
+
 
 class SocketStore {
-  sockets = [{}];
+  sockets:SocketType[] = [];
 
   constructor() {
     makeObservable(this, {
@@ -13,7 +21,7 @@ class SocketStore {
     });
   }
 
-  addSocket(socket) {
+  addSocket(socket: SocketType) {
     this.sockets.push(socket);
   }
   getSockets() {

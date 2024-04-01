@@ -3,90 +3,89 @@ import userStore from "../stores/userStore";
 import socketStore from "../stores/socketStore";
 import controllerStore from "../stores/controllerStore";
 import { signInControllerService } from "./httpService";
-import exp from "constants";
-import { get } from "core-js/core/dict";
 
-type SocketType = {
-    popID: string;
-    client: TcpSocket.Socket;
-}
+// const SocketStates = {
+//     CONNECTED: 'connected',
+//     DISCONNECTED: 'disconnected',
+//     CONNECTING: 'connecting',
+//   };
 
-let sockets: SocketType[] = [];
+// let socketState = SocketStates.DISCONNECTED;
 
-const SocketStates = {
-    CONNECTED: 'connected',
-    DISCONNECTED: 'disconnected',
-    CONNECTING: 'connecting',
-  };
+// export const setSocketState = (state: string) => {
+//     socketState = state;
+// }
 
-let socketState = SocketStates.DISCONNECTED;
-
-export const setSocketState = (state: string) => {
-    socketState = state;
-}
-
-export const getSocketState = () => {
-    return socketState;
-}
+// export const getSocketState = () => {
+//     return socketState;
+// }
 
 // Function to update interval based on socket state
-const updateInterval = () => {
-  switch (getSocketState()) {
-    case SocketStates.CONNECTED:
-      clearInterval(intervalId);
-      intervalId = setInterval(handleSocketState, 20000); // Change interval to 10 seconds when connected
-      break;
+// const updateInterval = () => {
+//   switch (getSocketState()) {
+//     case SocketStates.CONNECTED:
+//       clearInterval(intervalId);
+//       intervalId = setInterval(handleSocketState, 20000); // Change interval to 10 seconds when connected
+//       break;
 
-    case SocketStates.DISCONNECTED:
-        clearInterval(intervalId);
-        intervalId = setInterval(handleSocketState, 10000); // Reset interval to default value when disconnected or connecting
-        break;
+//     case SocketStates.DISCONNECTED:
+//         clearInterval(intervalId);
+//         intervalId = setInterval(handleSocketState, 10000); // Reset interval to default value when disconnected or connecting
+//         break;
 
-    case SocketStates.CONNECTING:
-      clearInterval(intervalId);
-      intervalId = setInterval(handleSocketState, 10000); // Reset interval to default value when disconnected or connecting
-      break;
-    default:
-      break;
-  }
-};
+//     case SocketStates.CONNECTING:
+//       clearInterval(intervalId);
+//       intervalId = setInterval(handleSocketState, 10000); // Reset interval to default value when disconnected or connecting
+//       break;
+//     default:
+//       break;
+//   }
+// };
 
 
-export const handleSocketState = () => {
-    switch (socketState) {
-        case SocketStates.CONNECTED:
-            //updateInterval();
-            getControllerStatus();            
-            break;
-        case SocketStates.DISCONNECTED:
-            //updateInterval();
-            console.log("Socket is disconnected");
-            searchForSocketsOnNetwork();
-            break;
-        case SocketStates.CONNECTING:
-            console.log("Socket is connecting");
-    }
-}
+// export const handleSocketState = () => {
+//     switch (socketState) {
+//         case SocketStates.CONNECTED:
+//             //updateInterval();
+//             getControllerStatus();            
+//             break;
+//         case SocketStates.DISCONNECTED:
+//             //updateInterval();
+//             console.log("Socket is disconnected");
+//             searchForSocketsOnNetwork();
+//             break;
+//         case SocketStates.CONNECTING:
+//             console.log("Socket is connecting");
+//     }
+// }
 
-export const getControllerStatus = () => {
-    sockets.forEach(socket => {
-        console.log("Getting controller status for controller with pop-ID: " + socket.popID);
-        socket.client.write("GET_STATE");  
-    })
-}
+// export const getControllerStatus = () => {
+//     socketStore.sockets.forEach(socket => {
+//         console.log("Getting controller status for controller with pop-ID: " + socket.popID);
+//         socket.client.write("GET_STATE");  
+//     })
+// }
 
 // Define the initial interval durationr
-let intervalId = setInterval(getControllerStatus, 15000);
+//let intervalId = setInterval(getControllerStatus, 15000);
 
 
-export const getSockets = () => {
-    return sockets;
-}
+// export const getSockets = () => {
+//     return sockets;
+// }
 
 export const searchForSocketsOnNetwork = () => {
     console.log("Connecting to sockets on network");
     const controllers = controllerStore.getControllers();
-    
+
+    const KEEP_ALIVE_INTERVAL = 15000; // 1 minute
+
+    // Function to send keep-alive ping
+    const sendGetStatus = (socket) => {
+    socket.write("GET_STATE"); // Send a keep-alive ping message
+    };
+
+
     controllers.forEach(controller => {
         console.log("controller: ", controller);
         const options = {
@@ -97,7 +96,13 @@ export const searchForSocketsOnNetwork = () => {
 
         try {
             const client = TcpSocket.createConnection(options, () => {
-                client.write("Hello server!");
+            client.write("Hello server!");
+            // Send the initial keep-alive ping
+            sendGetStatus(client);
+            // Schedule periodic keep-alive pings
+            setInterval(() => {
+                sendGetStatus(client);
+            }, KEEP_ALIVE_INTERVAL);
             });
 
             // Add event listeners for incoming data
@@ -121,16 +126,16 @@ export const searchForSocketsOnNetwork = () => {
 
             client.on("connect", () => {
                 console.log("Connected to controller");
-                sockets.push({"popID": controller.popID, "client": client});
-                setSocketState(SocketStates.CONNECTED);
+                socketStore.addSocket({"popID": controller.popID, "client": client});
+                //setSocketState(SocketStates.CONNECTED);
             });
 
             client.on("close", () => {
                 console.log("Connection closed");
-                sockets = sockets.filter(socket => socket.popID !== controller.popID);
-                if(sockets.length === 0 ){
-                    setSocketState(SocketStates.DISCONNECTED)
-                }
+                socketStore.sockets = socketStore.sockets.filter(socket => socket.popID !== controller.popID);
+                // if(socketStore.sockets.length === 0 ){
+                //     setSocketState(SocketStates.DISCONNECTED)
+                // }
             });
         } catch (error) {
             console.log("Error connecting to socket:", error);
@@ -157,8 +162,8 @@ export const connectToSocketOnNetwork = (popID: string) => {
         const client = TcpSocket.createConnection(options, () => {
             client.write("Hello server!");
         });
-
-        sockets.push({"popID": popID, "client": client})
+        socketStore.addSocket({"popID": popID, "client": client});
+        //sockets.push({"popID": popID, "client": client})
         //Implement if socket exists, dont add
                
         // Add event listeners for incoming data
@@ -195,7 +200,7 @@ export const connectToSocketOnNetwork = (popID: string) => {
 
 export const sendMessageToSocketOnNetwork = (popID: string, message: string) => {
 
-    const socket = sockets.find(socket => socket.popID === popID);
+    const socket = socketStore.sockets.find(socket => socket.popID === popID);
     console.log("socket: ", socket)
 
     if (socket && socket.client && socket.client) {
@@ -206,9 +211,9 @@ export const sendMessageToSocketOnNetwork = (popID: string, message: string) => 
 //Virker
 export const sendTestMessage = (popID: string) => {
 
-    console.log("sendTestMessage socket lenght: ", sockets.length)
+    console.log("sendTestMessage socket lenght: ", socketStore.sockets.length)
 
-    sockets.forEach(socket => {
+    socketStore.sockets.forEach(socket => {
         if(socket.popID === popID){
             console.log("socket found")
             socket.client.write("Hello server, this is a test!");
