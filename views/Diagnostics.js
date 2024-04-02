@@ -19,6 +19,12 @@ import {
 } from "../service/httpService";
 import { sendMessageToSocketOnNetwork } from "../service/socketHandler";
 import loadingStore from "../stores/loadingStore";
+import { AnimatedCircularProgress } from "react-native-circular-progress";
+
+import {
+  getColorForProgress,
+  getColorForProgressTemperature,
+} from "../service/services";
 
 const Diagnostics = observer(({ navigation }) => {
   const { width } = Dimensions.get("window");
@@ -138,66 +144,77 @@ const Diagnostics = observer(({ navigation }) => {
         )}
       </View>
       <View style={[styles.information_container, { width: width }]}>
-        <Text style={styles.information_text}>
-          Operating time:{" "}
-          {Math.floor(
-            parseInt(controllerStore.diagnosticsData.operating_time) /
-              (60 * 60 * 24)
-          )}{" "}
-          days and{" "}
-          {Math.floor(
-            (parseInt(controllerStore.diagnosticsData.operating_time) %
-              (60 * 60 * 24)) /
-              (60 * 60)
-          )}{" "}
-          hours
-        </Text>
-        <Text style={styles.information_text}>
-          Light source on time:{" "}
-          {Math.floor(
-            parseInt(controllerStore.diagnosticsData.light_source_on_time) /
-              (60 * 60 * 24)
-          )}{" "}
-          days and{" "}
-          {Math.floor(
-            (parseInt(controllerStore.diagnosticsData.light_source_on_time) %
-              (60 * 60 * 24)) /
-              (60 * 60)
-          )}{" "}
-          hours
-        </Text>
-        <Text
-          style={[
-            styles.information_text,
-            {
-              color:
-                controllerStore.diagnosticsData
-                  .light_source_overall_faliure_condition > 0
-                  ? "red"
-                  : "#545454",
-            },
-          ]}
-        >
-          Light source faliures:{" "}
-          {
-            controllerStore.diagnosticsData
-              .light_source_overall_faliure_condition
-          }
-        </Text>
-        <Text
-          style={[
-            styles.information_text,
-            {
-              color:
-                controllerStore.diagnosticsData.overall_faliure_condition > 0
-                  ? "red"
-                  : "#545454",
-            },
-          ]}
-        >
-          NPC Driver faliures:{" "}
-          {controllerStore.diagnosticsData.overall_faliure_condition}
-        </Text>
+        <View style={styles.allProgressParameterContainer}>
+          <View style={styles.progressParameterContainer}>
+            <AnimatedCircularProgress
+              size={75}
+              width={12}
+              fill={controllerStore.state}
+              tintColor={
+                controllerStore.diagnosticsData.expectedLifeTimePercent
+                  ? getColorForProgress(
+                      Math.floor(
+                        parseInt(
+                          controllerStore.diagnosticsData
+                            .expectedLifeTimePercent
+                        )
+                      )
+                    )
+                  : "green"
+              } //"#00e0ff"
+              backgroundColor="#3d5875"
+              arcSweepAngle={180}
+              rotation={270}
+            >
+              {(fill) => (
+                <Text
+                  style={{ color: "#00e0ff", fontSize: 10, fontWeight: "bold" }}
+                >
+                  {parseFloat(
+                    controllerStore.diagnosticsData.expectedLifeTimePercent
+                  ).toFixed(1)}
+                  %
+                </Text>
+              )}
+            </AnimatedCircularProgress>
+            <Text style={styles.progressParameterText}>Lifetime left</Text>
+          </View>
+
+          <View style={styles.progressParameterContainer}>
+            <AnimatedCircularProgress
+              size={75}
+              width={12}
+              fill={
+                controllerStore.diagnosticsData.temperature
+                  ? parseInt(controllerStore.diagnosticsData.temperature) - 50
+                  : 0
+              }
+              tintColor={
+                controllerStore.diagnosticsData.expectedLifeTimePercent
+                  ? getColorForProgressTemperature(
+                      Math.floor(
+                        parseInt(controllerStore.diagnosticsData.temperature) -
+                          50
+                      )
+                    )
+                  : "green"
+              } //"#00e0ff"
+              backgroundColor="#3d5875"
+              arcSweepAngle={180}
+              rotation={270}
+            >
+              {(fill) => (
+                <Text
+                  style={{ color: "#00e0ff", fontSize: 10, fontWeight: "bold" }}
+                >
+                  {parseInt(controllerStore.diagnosticsData.temperature) - 60}°C
+                </Text>
+              )}
+            </AnimatedCircularProgress>
+            <Text style={styles.progressParameterText}>Temperature</Text>
+          </View>
+        </View>
+
         <TouchableOpacity
           style={{ alignSelf: "flex-end", marginRight: 20 }}
           onPress={() => handleSeeMore()}
@@ -268,6 +285,27 @@ const styles = StyleSheet.create({
     color: "#545454",
     textAlign: "left",
     margin: 5,
+  },
+  allProgressParameterContainer: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: "100%",
+    //paddingHorizontal: 20,
+  },
+  progressParameterContainer: {
+    flexDirection: "column",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginTop: 30,
+  },
+  progressParameterText: {
+    fontSize: 14,
+    fontWeight: "light",
+    color: "#545454",
+    textAlign: "center",
+    marginTop: -20,
   },
 });
 

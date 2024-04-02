@@ -25,6 +25,7 @@ import {
   searchForSocketsOnNetwork,
 } from "../service/socketHandler";
 import WifiManager from "react-native-wifi-reborn";
+import { getColorForProgress } from "../service/services";
 
 const Dashboard = observer(({ navigation }) => {
   // useEffect(() => {
@@ -71,18 +72,6 @@ const Dashboard = observer(({ navigation }) => {
         navigation.navigate("QrScanner"); // Navigate to QR scanner with controller name
       }
     });
-  };
-
-  // Function to map value to a color within the gradient
-  const getColorForProgress = (value) => {
-    // Calculate the color gradient between red, yellow, and green
-    const red = Math.max(
-      0,
-      Math.min(255, Math.floor((255 * (100 - value)) / 50))
-    );
-    const green = Math.max(0, Math.min(255, Math.floor((255 * value) / 50)));
-    const blue = 0;
-    return `rgb(${red},${green},${blue})`;
   };
 
   return (
