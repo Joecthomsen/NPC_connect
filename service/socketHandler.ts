@@ -118,6 +118,28 @@ export const searchForSocketsOnNetwork = () => {
                         client.write("SET_REFRESH_TOKEN " + response.message.refreshToken);
                     }
                 }
+                else if(jsonData.status === "ManufactoringID") {
+                    
+                    try {
+                        
+                        console.log("IDS: " + jsonData.ids);
+                
+                        if (jsonData.status === "ManufactoringID" && typeof jsonData.ids === "string") {
+                            const idsString = jsonData.ids;
+                            const idsArray = idsString.split(',').map(idPair => idPair.split(':')[1]);
+                            idsArray.forEach(id => {
+                                console.log("ID: " + id);
+                                controllerStore.addControleGear(id)
+                            });
+                        }
+                        else {
+                            console.log("Error parsing JSON inner:", jsonData);
+                        }
+                    } catch (error) {
+                        console.log("Error parsing JSON:", error);
+                    }
+
+                }
             });
 
             client.on("error", (error) => {
@@ -127,7 +149,6 @@ export const searchForSocketsOnNetwork = () => {
             client.on("connect", () => {
                 console.log("Connected to controller");
                 socketStore.addSocket({"popID": controller.popID, "client": client});
-                //setSocketState(SocketStates.CONNECTED);
             });
 
             client.on("close", () => {
@@ -189,6 +210,7 @@ export const connectToSocketOnNetwork = (popID: string) => {
         });
 
         client.on("connect", () => {
+            client.write("GET_MANUFACTORING_ID_ON_BUS");
             console.log("Connected to controller");
         })
 

@@ -12,7 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { addControllerService } from '../service/httpService';
 import controllerStore from '../stores/controllerStore';
 import loadingStore from '../stores/loadingStore';
-import { connectToSocketOnNetwork } from '../service/socketHandler';
+import { connectToSocketOnNetwork, searchForSocketsOnNetwork, sendMessageToSocketOnNetwork } from '../service/socketHandler';
 import  WifiManager  from 'react-native-wifi-reborn';
 
 interface WifiCardProps {
@@ -87,11 +87,12 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
         }
 
         try {
-            const reponse = await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());  //Add the controller to the database
-        
+            const reponse = await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());  //Add the controller to the database   
             if(reponse.statusCode === 201) {
                 console.log("Controller added to database");
-                connectToSocketOnNetwork(wifiStore.getPop_id());
+                searchForSocketsOnNetwork();
+                //connectToSocketOnNetwork(wifiStore.getPop_id());
+                //sendMessageToSocketOnNetwork(wifiStore.getPop_id(), "GET_MANUFACTORING_ID_ON_BUS");
                 navigation?.navigate("Diagnostics")
             }
             else {

@@ -5,6 +5,7 @@ import {
   ScrollView,
   Dimensions,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import React, { useEffect } from "react";
 import Layout from "./Layout";
@@ -12,7 +13,11 @@ import IconButton from "../components/IconButton";
 import controllerStore from "../stores/controllerStore";
 import SelectorButton from "../components/SelectorButton";
 import { observer } from "mobx-react-lite";
-import { fetchDiagnosticsService } from "../service/httpService";
+import {
+  fetchDiagnosticsService,
+  fetchControllers,
+} from "../service/httpService";
+import { sendMessageToSocketOnNetwork } from "../service/socketHandler";
 import loadingStore from "../stores/loadingStore";
 
 const Diagnostics = observer(({ navigation }) => {
@@ -22,16 +27,47 @@ const Diagnostics = observer(({ navigation }) => {
     navigation.navigate("Diagnostics Detailes");
   };
 
+  const refreshData = async () => {
+    loadingStore.setLoading(true);
+    // sendMessageToSocketOnNetwork(
+    //   controllerStore.getSelectedController().popID,
+    //   "GET_MANUFACTORING_ID_ON_BUS"
+    // );
+
+    const controllers = await fetchControllers();
+    if (!controllers.statusCode === 200) {
+      loadingStore.setLoading(false);
+      return Alert.alert("Error", "Error fetching controllers");
+    } else {
+      console.log("Controller: ", controllers);
+      console.log("Controllers: ", controllers.message.controllers);
+
+      controllerStore.setControllers(controllers.message.controllers);
+
+      console.log(controllerStore.getSelectedController().popID);
+      const data = await fetchDiagnosticsService(
+        controllerStore.getSelectedControleGearManuId()
+      );
+      controllerStore.setDiagnosticsData(data.message);
+    }
+
+    loadingStore.setLoading(false);
+  };
+
   const buttons = [
     <IconButton
-      iconName={"person-outline"}
-      onPress={() => console.log("Click me baby one more time!")}
+      iconName={"refresh-outline"}
+      onPress={
+        controllerStore.getControllers().length > 0
+          ? () => refreshData()
+          : () => Alert.alert("No Controllers Found, please add a controller")
+      }
       size={36}
       color="white"
     />,
     <IconButton
       iconName={"sunny-outline"}
-      onPress={() => console.log("Click me baby one more time!")}
+      onPress={() => console.log("Clicked")}
       size={36}
       color="white"
     />,

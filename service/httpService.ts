@@ -63,7 +63,7 @@ export const signInService = async (email: string, password: string): Promise<Re
 
       const decodedAccessToken = jwtDecode<DecodedJwtPayload>(accessToken);
 
-      console.log(decodedAccessToken);
+      console.log("Controlers: ", controllers);
 
       userStore.setEmail(decodedAccessToken.email);
       userStore.setName(decodedAccessToken.name);
@@ -202,6 +202,27 @@ export const fetchDiagnosticsService = async (manufactoringID: string): Promise<
     const data = await response.json();
     return { statusCode: response.status, message: data };
   } catch (error) {
+    console.error(error);
+    return { statusCode: 500, message: error.message };
+  }
+}
+
+export const fetchControllers = async (): Promise<Response> => {
+  try {
+    const response = await fetch(URL + "/users/controllers/all", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "token": userStore.getAccessToken(),
+    }})
+    if (response.status!== 200) {
+        console.log("Something went wrong");
+        return { statusCode: response.status, message: "Something went wrong" };
+    }
+    const data = await response.json();
+    console.log("data ", data)
+    return { statusCode: response.status, message: data };
+  }catch (error) {
     console.error(error);
     return { statusCode: 500, message: error.message };
   }
