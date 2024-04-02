@@ -27,6 +27,24 @@ import {
 } from "../service/services";
 
 const Diagnostics = observer(({ navigation }) => {
+  const [blinking, setBlinking] = React.useState(false);
+
+  const startBlinking = () => {
+    setBlinking(true);
+    sendMessageToSocketOnNetwork(
+      controllerStore.getSelectedController().popID,
+      "BLINK_LAMP " + controllerStore.getSelectedControleGearManuId()
+    );
+  };
+
+  const stopBlinking = () => {
+    setBlinking(false);
+    sendMessageToSocketOnNetwork(
+      controllerStore.getSelectedController().popID,
+      "STOP_BLINK"
+    );
+  };
+
   const { width } = Dimensions.get("window");
 
   const handleSeeMore = () => {
@@ -73,9 +91,9 @@ const Diagnostics = observer(({ navigation }) => {
     />,
     <IconButton
       iconName={"sunny-outline"}
-      onPress={() => console.log("Clicked")}
+      onPress={blinking ? () => stopBlinking() : () => startBlinking()}
       size={36}
-      color="white"
+      color={blinking ? "yellow" : "white"}
     />,
   ];
 
