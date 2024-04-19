@@ -88,7 +88,7 @@ const WifiCard: React.FC<WifiCardProps> = observer( ({ ssid, signal, security, b
 
         try {
             const reponse = await addControllerService(wifiStore.getPop_id(), controllerStore.getNewControllerName());  //Add the controller to the database   
-            if(reponse.statusCode === 201) {
+            if(reponse.statusCode === 201 || reponse.statusCode === 200) {
                 console.log("Controller added to database");
                 searchForSocketsOnNetwork();
                 //connectToSocketOnNetwork(wifiStore.getPop_id());

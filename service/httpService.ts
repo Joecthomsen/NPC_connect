@@ -142,7 +142,7 @@ export const addControllerService = async (popID: string, name: string ): Promis
       }),
     });
 
-    if (response.status !== 201) {
+    if (response.status !== 201 && response.status !== 200) {
         console.log("Something went wrong");
         const data = await response.json();
         console.log(data);
