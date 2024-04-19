@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 
 import { BarCodeScanner } from "expo-barcode-scanner";
 import { useEffect, useState } from "react";
@@ -42,7 +42,7 @@ const QrScanner = ({ navigation }) => {
     console.log("Secure session established!");
   };
 
-  const scanForWiFi = async () => {
+  const scanForWiFi = async ({ navigation }) => {
     if (provisioner instanceof Provisioner) {
       try {
         const res = await provisioner.scanForWiFi();
@@ -55,14 +55,25 @@ const QrScanner = ({ navigation }) => {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
-    console.log("popID: " + JSON.parse(data).pop);
-    console.log("ap_name: " + JSON.parse(data).name);
-    wifiStore.setPop_id(JSON.parse(data).pop);
-    wifiStore.setAp_name(JSON.parse(data).name);
-    //setPop_id(JSON.parse(data).pop);
-    //setPop_id("abcd1234");
-    //console.log(pop_id);
-    //alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+    try {
+      const qrData = JSON.parse(data);
+      if (qrData && qrData.pop && qrData.name) {
+        // Valid QR code format
+        console.log("popID: " + qrData.pop);
+        console.log("ap_name: " + qrData.name);
+        wifiStore.setPop_id(qrData.pop);
+        wifiStore.setAp_name(qrData.name);
+      } else {
+        // Invalid QR code format
+        throw new Error("Invalid QR code format");
+      }
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        "Please scan a valid QR code. Error message: " + error.message
+      );
+      navigation.navigate("Dashboard");
+    }
   };
 
   const startCommissioning = async () => {
